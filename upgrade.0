@@ -1,0 +1,913 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Upgrades.Upgrades
+-- Took 0.01s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+require(v1.Framework.Features.Buffs.BuffsConfig)
+local v2 = require(v1.Framework.Other.Images)
+local v3 = {
+    ["Start"] = {
+        ["image"] = "rbxassetid://134481568703786",
+        ["price"] = 0
+    }
+}
+local v4 = {
+    ["image"] = nil,
+    ["price"] = 250,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money I"] = v4
+local v5 = {
+    ["image"] = nil,
+    ["price"] = 5000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money II"] = v5
+local v6 = {
+    ["image"] = nil,
+    ["price"] = 100000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.35,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money III"] = v6
+local v7 = {
+    ["image"] = nil,
+    ["price"] = 2000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.4,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money IV"] = v7
+local v8 = {
+    ["image"] = nil,
+    ["price"] = 40000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.4,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money V"] = v8
+local v9 = {
+    ["image"] = nil,
+    ["price"] = 800000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money VI"] = v9
+local v10 = {
+    ["image"] = nil,
+    ["price"] = 15000000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money VII"] = v10
+local v11 = {
+    ["image"] = nil,
+    ["price"] = 300000000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money VIII"] = v11
+local v12 = {
+    ["image"] = nil,
+    ["price"] = 6000000000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money IX"] = v12
+local v13 = {
+    ["image"] = nil,
+    ["price"] = 120000000000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.75,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money X"] = v13
+local v14 = {
+    ["image"] = nil,
+    ["price"] = 2500000000000000,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 0.75,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money XI"] = v14
+local v15 = {
+    ["image"] = nil,
+    ["price"] = 5e16,
+    ["buffs"] = nil,
+    ["image"] = v2.Money,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["amount"] = 1,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Money XII"] = v15
+local v16 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 500,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 0.25,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck I"] = v16
+local v17 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 10000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck II"] = v17
+local v18 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 200000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck III"] = v18
+local v19 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 4000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 1,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck IV"] = v19
+local v20 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 80000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 1,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck V"] = v20
+local v21 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 1500000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 1,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck VI"] = v21
+local v22 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 30000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck VII"] = v22
+local v23 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 600000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck VIII"] = v23
+local v24 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 12000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 3,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck IX"] = v24
+local v25 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 250000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 3,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck X"] = v25
+local v26 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 5000000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 3,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck XI"] = v26
+local v27 = {
+    ["image"] = "rbxassetid://131133222141302",
+    ["price"] = 1e17,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 4,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Luck XII"] = v27
+local v28 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 1e16,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune I"] = v28
+local v29 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 2.5e17,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune II"] = v29
+local v30 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 1e18,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 3,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune III"] = v30
+local v31 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 2e19,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 3,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune IV"] = v31
+local v32 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 5e20,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 3,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune V"] = v32
+local v33 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 1e22,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 4,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune VI"] = v33
+local v34 = {
+    ["image"] = "rbxassetid://103591109190173",
+    ["price"] = 2e23,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["amount"] = 5,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Fortune VII"] = v34
+local v35 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 1000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 0.2,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage I"] = v35
+local v36 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 20000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 0.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage II"] = v36
+local v37 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 400000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 0.35,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage III"] = v37
+local v38 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 8000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage IV"] = v38
+local v39 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 160000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 0.65,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage V"] = v39
+local v40 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 3000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 0.8,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage VI"] = v40
+local v41 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 60000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 1,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage VII"] = v41
+local v42 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 1200000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 1.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage VIII"] = v42
+local v43 = {
+    ["image"] = "rbxassetid://133003586374441",
+    ["price"] = 25000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Damage Multiplier"] = {
+            ["amount"] = 1.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Damage IX"] = v43
+local v44 = {
+    ["image"] = "rbxassetid://134761194266606",
+    ["price"] = 1000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["amount"] = -0.15,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Roll Speed I"] = v44
+local v45 = {
+    ["image"] = "rbxassetid://134761194266606",
+    ["price"] = 100000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["amount"] = -0.15,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Roll Speed II"] = v45
+local v46 = {
+    ["image"] = "rbxassetid://134761194266606",
+    ["price"] = 10000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["amount"] = -0.15,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Roll Speed III"] = v46
+local v47 = {
+    ["image"] = "rbxassetid://134761194266606",
+    ["price"] = 1000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["amount"] = -0.15,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Roll Speed IV"] = v47
+local v48 = {
+    ["image"] = "rbxassetid://134761194266606",
+    ["price"] = 100000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["amount"] = -0.15,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Roll Speed V"] = v48
+local v49 = {
+    ["image"] = "rbxassetid://134761194266606",
+    ["price"] = 1e16,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["amount"] = -0.15,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Roll Speed VI"] = v49
+local v50 = {
+    ["image"] = "rbxassetid://118330449034393",
+    ["price"] = 500000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Sell Multiplier"] = {
+            ["amount"] = 0.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Sell I"] = v50
+local v51 = {
+    ["image"] = "rbxassetid://118330449034393",
+    ["price"] = 10000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Sell Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Sell II"] = v51
+local v52 = {
+    ["image"] = "rbxassetid://118330449034393",
+    ["price"] = 200000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Sell Multiplier"] = {
+            ["amount"] = 0.75,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Sell III"] = v52
+local v53 = {
+    ["image"] = "rbxassetid://118330449034393",
+    ["price"] = 4000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Sell Multiplier"] = {
+            ["amount"] = 1,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Sell IV"] = v53
+local v54 = {
+    ["image"] = "rbxassetid://118330449034393",
+    ["price"] = 80000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Sell Multiplier"] = {
+            ["amount"] = 1.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Sell V"] = v54
+local v55 = {
+    ["image"] = "rbxassetid://118330449034393",
+    ["price"] = 1500000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Sell Multiplier"] = {
+            ["amount"] = 1.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Sell VI"] = v55
+local v56 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 2500,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 5,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage I"] = v56
+local v57 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 50000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 5,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage II"] = v57
+local v58 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 1000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 10,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage III"] = v58
+local v59 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 20000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 10,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage IV"] = v59
+local v60 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 400000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 10,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage V"] = v60
+local v61 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 8000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 10,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage VI"] = v61
+local v62 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 160000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 10,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage VII"] = v62
+local v63 = {
+    ["image"] = "rbxassetid://81367451806234",
+    ["price"] = 3000000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Unit Storage"] = {
+            ["amount"] = 10,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Unit Storage VIII"] = v63
+local v64 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 1000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 0.2,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health I"] = v64
+local v65 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 20000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 0.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health II"] = v65
+local v66 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 400000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 0.35,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health III"] = v66
+local v67 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 8000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 0.5,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health IV"] = v67
+local v68 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 160000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 0.65,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health V"] = v68
+local v69 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 3000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 0.8,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health VI"] = v69
+local v70 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 60000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 1,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health VII"] = v70
+local v71 = {
+    ["image"] = "rbxassetid://76695823642344",
+    ["price"] = 1200000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Health Multiplier"] = {
+            ["amount"] = 1.25,
+            ["bucket"] = "percentage"
+        }
+    }
+}
+v3["Health VIII"] = v71
+local v72 = {
+    ["image"] = "rbxassetid://112002461760953",
+    ["price"] = 250000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Walkspeed"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Walkspeed I"] = v72
+local v73 = {
+    ["image"] = "rbxassetid://112002461760953",
+    ["price"] = 5000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Walkspeed"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Walkspeed II"] = v73
+local v74 = {
+    ["image"] = "rbxassetid://112002461760953",
+    ["price"] = 100000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Walkspeed"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Walkspeed III"] = v74
+local v75 = {
+    ["image"] = "rbxassetid://112002461760953",
+    ["price"] = 2000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Walkspeed"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Walkspeed IV"] = v75
+local v76 = {
+    ["image"] = "rbxassetid://112002461760953",
+    ["price"] = 40000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Walkspeed"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Walkspeed V"] = v76
+local v77 = {
+    ["image"] = "rbxassetid://112002461760953",
+    ["price"] = 800000000000,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Walkspeed"] = {
+            ["amount"] = 2,
+            ["bucket"] = "base"
+        }
+    }
+}
+v3["Walkspeed VI"] = v77
+return v3

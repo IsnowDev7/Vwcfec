@@ -1,0 +1,113 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Buffs.BuffsConfig
+-- Took 0s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+require(v1.Framework.Features.Data.DataSettings)
+local v_u_2 = require(v1.Packages.NumberFormatter)
+local v3 = {
+    ["FRIEND_BOOST_PER_FRIEND"] = 0.1
+}
+local v_u_4 = {}
+local v7 = {
+    ["default"] = 1,
+    ["order"] = 1,
+    ["image"] = "rbxassetid://131133222141302",
+    ["formatValue"] = nil,
+    ["formatBuckets"] = nil,
+    ["formatValue"] = function(p5) -- name: formatValue
+        -- upvalues: (copy) v_u_2
+        return "x" .. v_u_2.FormatCompact(p5, 2)
+    end,
+    ["formatBuckets"] = {
+        ["base"] = function(p6) -- name: base
+            -- upvalues: (copy) v_u_2
+            return ((p6 >= 0 and "+" or "") .. v_u_2.FormatCompact(p6, 2)) .. "x"
+        end
+    }
+}
+v_u_4.Luck = v7
+v_u_4["Money Multiplier"] = {
+    ["default"] = 1,
+    ["order"] = 2,
+    ["image"] = "rbxassetid://117946529959733",
+    ["formatValue"] = nil,
+    ["post"] = nil,
+    ["formatValue"] = function(p8) -- name: formatValue
+        -- upvalues: (copy) v_u_2
+        return "x" .. v_u_2.FormatCompact(p8, 2)
+    end,
+    ["post"] = function(p9, p10) -- name: post
+        return p10 * (1 + (p9:GetAttribute("FriendBoost") or 0))
+    end
+}
+v_u_4["Damage Multiplier"] = {
+    ["default"] = 1,
+    ["order"] = 3,
+    ["image"] = "rbxassetid://133003586374441",
+    ["formatValue"] = nil,
+    ["formatValue"] = function(p11) -- name: formatValue
+        -- upvalues: (copy) v_u_2
+        return "x" .. v_u_2.FormatCompact(p11, 2)
+    end
+}
+v_u_4["Sell Multiplier"] = {
+    ["default"] = 1,
+    ["order"] = 4,
+    ["image"] = "rbxassetid://118330449034393"
+}
+v_u_4["Unit Storage"] = {
+    ["default"] = 100,
+    ["order"] = 5,
+    ["image"] = "rbxassetid://81367451806234"
+}
+v_u_4["Health Multiplier"] = {
+    ["default"] = 1,
+    ["order"] = 6,
+    ["image"] = "rbxassetid://76695823642344"
+}
+v_u_4["Roll Duration"] = {
+    ["default"] = 2.5
+}
+v_u_4.Rolls = {
+    ["default"] = 1
+}
+v_u_4.Walkspeed = {
+    ["default"] = 24,
+    ["image"] = "rbxassetid://112002461760953"
+}
+function v3.FormatAmount(p12, p13, p14) -- name: FormatAmount
+    -- upvalues: (copy) v_u_4, (copy) v_u_2
+    local v15 = v_u_4[p12]
+    local v16 = v15 and v15.formatBuckets
+    if v16 then
+        v16 = v15.formatBuckets[p13]
+    end
+    if v16 then
+        return v16(p14)
+    elseif p13 == "percentage" then
+        local v17 = p14 * 100
+        return ((v17 >= 0 and "+" or "") .. v_u_2.FormatCompact(v17, 2)) .. "%"
+    elseif p13 == "multiplier" then
+        return "x" .. v_u_2.FormatCompact(p14, 2)
+    else
+        return (p14 >= 0 and "+" or "") .. v_u_2.FormatCompact(p14, 2)
+    end
+end
+function v3.FormatValue(p18, p19) -- name: FormatValue
+    -- upvalues: (copy) v_u_4, (copy) v_u_2
+    local v20 = v_u_4[p18]
+    if v20 and v20.formatValue then
+        return v20.formatValue(p19)
+    else
+        return v_u_2.FormatCompact(p19, 2)
+    end
+end
+function v3.GetBuff(p21) -- name: GetBuff
+    -- upvalues: (copy) v_u_4
+    return v_u_4[p21]
+end
+function v3.GetAllBuffs() -- name: GetAllBuffs
+    -- upvalues: (copy) v_u_4
+    return v_u_4
+end
+return v3

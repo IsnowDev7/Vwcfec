@@ -1,0 +1,210 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Monetization.MonetizationController
+-- Took 0.03s to decompile.
+
+local v_u_1 = game:GetService("MarketplaceService")
+local v2 = game:GetService("ReplicatedStorage")
+local v3 = game:GetService("TextChatService")
+local v_u_4 = game:GetService("Players")
+local v_u_5 = require(v2.Framework.Features.Notifications.NotificationController)
+local v6 = require(v2.Framework.Features.Data.DataController)
+local v_u_7 = require(v2.Framework.Features.UI.MenuController)
+local v_u_8 = require(v2.Framework.Features.UI.UIReferences)
+local v9 = require(v2.Packages.Network)
+local v10 = require(v2.Framework.Features.UI.Components.Button)
+local v11 = require(v2.Framework.Utils.ZoneUtil)
+local v12 = require(script.Parent.MonetizationConfig)
+local v_u_13 = v9.ClientComm.new(v2.Network, false, "MonetizationService"):GetSignal("RedeemCode")
+local v_u_14 = v_u_4.LocalPlayer
+local v15 = v_u_8.Menus.Shop.Main.List
+local v16 = v_u_8.HUD.ProductDisplay
+function v3.OnIncomingMessage(p17)
+    -- upvalues: (copy) v_u_4
+    local v18 = p17.TextSource
+    if v18 then
+        local v19 = v_u_4:GetPlayerByUserId(v18.UserId)
+        if v19 and v19:GetAttribute("VIP") then
+            local v20 = Instance.new("TextChatMessageProperties")
+            v20.PrefixText = "<font color=\"#FFD54A\">[VIP]</font> " .. p17.PrefixText
+            return v20
+        end
+    end
+end
+local v_u_21 = v12.Products["1Spin"]
+local _, v22 = v10.init(v16.JackpotRoll)
+v22.Activated:Connect(function()
+    -- upvalues: (copy) v_u_21, (copy) v_u_1, (copy) v_u_14, (copy) v_u_5
+    if v_u_21.id > 0 then
+        v_u_1:PromptProductPurchase(v_u_14, v_u_21.id)
+    else
+        v_u_5.TextNotification({
+            ["message"] = "This item has not been configured yet.",
+            ["notificationType"] = "error"
+        })
+    end
+end)
+local v23 = {}
+for v24, v_u_25 in v12.Products do
+    local v26 = v15:FindFirstChild(v24, true)
+    local _, v27 = v10.init(v26.Home)
+    local v_u_28 = v27.Frame.Info.RobuxPrice
+    local v_u_29 = v_u_25.id
+    local v_u_30 = Enum.InfoType.Product
+    local function v_u_32(p31)
+        -- upvalues: (copy) v_u_28
+        v_u_28.Text = "\238\128\130" .. p31
+    end
+    v_u_28.Text = "\238\128\130" .. v_u_25.price
+    if v_u_29 > 0 then
+        task.spawn(function()
+            -- upvalues: (copy) v_u_1, (copy) v_u_29, (copy) v_u_30, (copy) v_u_32
+            local v33, v34 = pcall(v_u_1.GetProductInfoAsync, v_u_1, v_u_29, v_u_30)
+            if v33 and v34.PriceInRobux then
+                v_u_32(v34.PriceInRobux)
+            end
+        end)
+    end
+    v27.Activated:Connect(function()
+        -- upvalues: (copy) v_u_25, (copy) v_u_1, (copy) v_u_14, (copy) v_u_5
+        if v_u_25.id > 0 then
+            v_u_1:PromptProductPurchase(v_u_14, v_u_25.id)
+        else
+            v_u_5.TextNotification({
+                ["message"] = "This item has not been configured yet.",
+                ["notificationType"] = "error"
+            })
+        end
+    end)
+end
+local v_u_35 = {}
+for v_u_36, v_u_37 in v12.Gamepasses do
+    local v38 = v15:FindFirstChild(v_u_36, true)
+    local _, v_u_39 = v10.init(v38.Buy)
+    local v_u_40 = v_u_39.Frame.Info.RobuxPrice
+    local v_u_41 = v6.OwnedGamepasses[v_u_36]
+    local v_u_42 = v_u_37.price
+    local function v44() -- name: updateButton
+        -- upvalues: (copy) v_u_41, (copy) v_u_40, (ref) v_u_42, (copy) v_u_39
+        local v43 = v_u_41() == true
+        v_u_40.Text = v43 and "Owned" or "\238\128\130" .. v_u_42
+        v_u_39.Interactable = not v43
+    end
+    local v_u_45 = v_u_37.id
+    local v_u_46 = Enum.InfoType.GamePass
+    local v47 = v_u_37.price
+    local function v_u_50(p48)
+        -- upvalues: (ref) v_u_42, (copy) v_u_35, (copy) v_u_36, (copy) v_u_41, (copy) v_u_40, (copy) v_u_39
+        v_u_42 = p48
+        v_u_35[v_u_36] = p48
+        local v49 = v_u_41() == true
+        v_u_40.Text = v49 and "Owned" or "\238\128\130" .. v_u_42
+        v_u_39.Interactable = not v49
+    end
+    v_u_42 = v47
+    v_u_35[v_u_36] = v47
+    local v51 = v_u_41() == true
+    v_u_40.Text = v51 and "Owned" or "\238\128\130" .. v_u_42
+    v_u_39.Interactable = not v51
+    if v_u_45 > 0 then
+        task.spawn(function()
+            -- upvalues: (copy) v_u_1, (copy) v_u_45, (copy) v_u_46, (copy) v_u_50
+            local v52, v53 = pcall(v_u_1.GetProductInfoAsync, v_u_1, v_u_45, v_u_46)
+            if v52 and v53.PriceInRobux then
+                v_u_50(v53.PriceInRobux)
+            end
+        end)
+    end
+    v_u_41.Observe(v44)
+    v_u_39.Activated:Connect(function()
+        -- upvalues: (copy) v_u_41, (copy) v_u_37, (copy) v_u_1, (copy) v_u_14, (copy) v_u_5
+        if v_u_41() then
+            return
+        elseif v_u_37.id > 0 then
+            v_u_1:PromptGamePassPurchase(v_u_14, v_u_37.id)
+        else
+            v_u_5.TextNotification({
+                ["message"] = "This item has not been configured yet.",
+                ["notificationType"] = "error"
+            })
+        end
+    end)
+end
+local v_u_54 = {}
+for v55, v56 in v12.Gamepasses do
+    local v57 = v15:FindFirstChild(v55, true)
+    local v58 = {
+        ["name"] = v55,
+        ["config"] = v56,
+        ["owned"] = v6.OwnedGamepasses[v55],
+        ["layoutOrder"] = v57.LayoutOrder,
+        ["image"] = v57.GamepassIcon.Image,
+        ["description"] = v57.GamepassDescription.Text
+    }
+    table.insert(v_u_54, v58)
+end
+table.sort(v_u_54, function(p59, p60)
+    return p59.layoutOrder < p60.layoutOrder
+end)
+local v_u_61 = 1
+local v62 = v_u_54[v_u_61]
+local _, v63 = v10.init(v16.Gamepasses)
+local v_u_64 = v63.Content
+local v_u_65 = v62
+for _, v_u_66 in v_u_54 do
+    v_u_66.owned.Observe(function()
+        -- upvalues: (ref) v_u_65, (copy) v_u_66, (copy) v_u_64, (copy) v_u_35
+        if v_u_65 == v_u_66 then
+            v_u_64.Title.Text = v_u_65.name
+            v_u_64.GameplassDisplay.Image = v_u_65.image
+            v_u_64.RobuxPrice.Text = v_u_65.owned() and "Owned" or "\238\128\130" .. (v_u_35[v_u_65.name] or v_u_65.config.price)
+        end
+    end)
+end
+v63.Activated:Connect(function()
+    -- upvalues: (ref) v_u_65, (copy) v_u_1, (copy) v_u_14, (copy) v_u_5
+    if v_u_65.owned() then
+        return
+    elseif v_u_65.config.id > 0 then
+        v_u_1:PromptGamePassPurchase(v_u_14, v_u_65.config.id)
+    else
+        v_u_5.TextNotification({
+            ["message"] = "This item has not been configured yet.",
+            ["notificationType"] = "error"
+        })
+    end
+end)
+v_u_64.Title.Text = v_u_65.name
+v_u_64.GameplassDisplay.Image = v_u_65.image
+v_u_64.RobuxPrice.Text = v_u_65.owned() and "Owned" or "\238\128\130" .. (v_u_35[v_u_65.name] or v_u_65.config.price)
+task.spawn(function()
+    -- upvalues: (ref) v_u_61, (copy) v_u_54, (ref) v_u_65, (copy) v_u_64, (copy) v_u_35
+    while task.wait(6) do
+        v_u_61 = v_u_61 % #v_u_54 + 1
+        v_u_65 = v_u_54[v_u_61]
+        v_u_64.Title.Text = v_u_65.name
+        v_u_64.GameplassDisplay.Image = v_u_65.image
+        v_u_64.RobuxPrice.Text = v_u_65.owned() and "Owned" or "\238\128\130" .. (v_u_35[v_u_65.name] or v_u_65.config.price)
+    end
+end)
+local v67 = v15.Codes
+local _, v68 = v10.init(v67.Redeem)
+local v_u_69 = v67.CodeFrame.TextBox
+v68.Activated:Connect(function()
+    -- upvalues: (copy) v_u_13, (copy) v_u_69
+    v_u_13:Fire(v_u_69.Text)
+end)
+v_u_69.FocusLost:Connect(function(p70)
+    -- upvalues: (copy) v_u_13, (copy) v_u_69
+    if p70 then
+        v_u_13:Fire(v_u_69.Text)
+    end
+end)
+local _, v71 = v10.init(v_u_8.Root.HUD.Left.Shop)
+v_u_7.InitMenuButton(v71, v_u_8.Menus.Shop)
+v11.InitPlayerZone(workspace.Zones, "Shop", function(_)
+    -- upvalues: (copy) v_u_7, (copy) v_u_8
+    v_u_7.OpenMenu(v_u_8.Menus.Shop)
+end, function(_)
+    -- upvalues: (copy) v_u_7
+    v_u_7.CloseMenu()
+end)
+return v23

@@ -1,0 +1,166 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Rolling.Dice
+-- Took 0s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v2 = require(v1.Framework.Other.Rarities)
+local v_u_3 = {
+    ["Basic"] = {
+        ["luck"] = 1,
+        ["rarity"] = "Common",
+        ["image"] = "rbxassetid://134876970337785"
+    },
+    ["Normal"] = {
+        ["luck"] = 2,
+        ["rarity"] = "Common",
+        ["image"] = "rbxassetid://134876970337785",
+        ["price"] = 1
+    },
+    ["Fire"] = {
+        ["luck"] = 5,
+        ["rarity"] = "Uncommon",
+        ["image"] = "rbxassetid://107584758470187",
+        ["price"] = 2500
+    },
+    ["Water"] = {
+        ["luck"] = 10,
+        ["rarity"] = "Uncommon",
+        ["image"] = "rbxassetid://107625282990508",
+        ["price"] = 10000
+    },
+    ["Nature"] = {
+        ["luck"] = 20,
+        ["rarity"] = "Rare",
+        ["image"] = "rbxassetid://112899446526334",
+        ["price"] = 75000
+    },
+    ["Lightning"] = {
+        ["luck"] = 42.5,
+        ["rarity"] = "Rare",
+        ["image"] = "rbxassetid://120765961091114",
+        ["price"] = 500000
+    },
+    ["Ice"] = {
+        ["luck"] = 100,
+        ["rarity"] = "Rare",
+        ["image"] = "rbxassetid://72989315871791",
+        ["price"] = 4000000
+    },
+    ["Magma"] = {
+        ["luck"] = 200,
+        ["rarity"] = "Epic",
+        ["image"] = "rbxassetid://103280550394904",
+        ["price"] = 30000000
+    },
+    ["Storm"] = {
+        ["luck"] = 400,
+        ["rarity"] = "Epic",
+        ["image"] = "rbxassetid://112829857583094",
+        ["price"] = 200000000
+    },
+    ["Shadow"] = {
+        ["luck"] = 750,
+        ["rarity"] = "Epic",
+        ["image"] = "rbxassetid://133489178472335",
+        ["price"] = 1500000000
+    },
+    ["Light"] = {
+        ["luck"] = 1500,
+        ["rarity"] = "Legendary",
+        ["image"] = "rbxassetid://91219086543206",
+        ["price"] = 12000000000
+    },
+    ["Blood Moon"] = {
+        ["luck"] = 3000,
+        ["rarity"] = "Legendary",
+        ["image"] = "rbxassetid://87152364704836",
+        ["price"] = 100000000000
+    },
+    ["Void"] = {
+        ["luck"] = 6000,
+        ["rarity"] = "Legendary",
+        ["image"] = "rbxassetid://134047270790894",
+        ["price"] = 750000000000
+    },
+    ["Solar"] = {
+        ["luck"] = 12500,
+        ["rarity"] = "Mythical",
+        ["image"] = "rbxassetid://103966927109104",
+        ["price"] = 5000000000000
+    },
+    ["Lunar"] = {
+        ["luck"] = 25000,
+        ["rarity"] = "Mythical",
+        ["image"] = "rbxassetid://98062406949774",
+        ["price"] = 37500000000000
+    },
+    ["Galaxy"] = {
+        ["luck"] = 50000,
+        ["rarity"] = "Divine",
+        ["image"] = "rbxassetid://91185634172436",
+        ["price"] = 150000000000000
+    },
+    ["Black Hole"] = {
+        ["luck"] = 100000,
+        ["rarity"] = "Divine",
+        ["image"] = "rbxassetid://97247214661606",
+        ["price"] = 1000000000000000
+    },
+    ["Dragon"] = {
+        ["luck"] = 200000,
+        ["rarity"] = "Exotic",
+        ["image"] = "rbxassetid://72339701378301",
+        ["price"] = 8500000000000000
+    },
+    ["Royal"] = {
+        ["luck"] = 400000,
+        ["rarity"] = "Exotic",
+        ["image"] = "rbxassetid://129331882004972",
+        ["price"] = 1e17
+    },
+    ["Prismatic"] = {
+        ["luck"] = 1000000,
+        ["rarity"] = "Celestial",
+        ["image"] = "rbxassetid://100284944801383",
+        ["price"] = 1e18
+    },
+    ["Arcane"] = {
+        ["luck"] = 2000000,
+        ["rarity"] = "Celestial",
+        ["image"] = "rbxassetid://92630730379347",
+        ["price"] = 1.25e19
+    },
+    ["Corrupted"] = {
+        ["luck"] = 5000000,
+        ["rarity"] = nil,
+        ["image"] = "rbxassetid://87917869781148",
+        ["price"] = 1.5e20,
+        ["rarity"] = v2.Refs.Secret1
+    },
+    ["Titan"] = {
+        ["luck"] = 10000000,
+        ["rarity"] = nil,
+        ["image"] = "rbxassetid://125423800047833",
+        ["price"] = 1e21,
+        ["rarity"] = v2.Refs.Secret1
+    },
+    ["Chrono"] = {
+        ["luck"] = 25000000,
+        ["rarity"] = nil,
+        ["image"] = "rbxassetid://86463060513242",
+        ["price"] = 1.5e22,
+        ["rarity"] = v2.Refs.Secret1
+    }
+}
+return {
+    ["Get"] = function(p4) -- name: Get
+        -- upvalues: (copy) v_u_3
+        return v_u_3[p4]
+    end,
+    ["GetAll"] = function() -- name: GetAll
+        -- upvalues: (copy) v_u_3
+        return v_u_3
+    end,
+    ["GetDefault"] = function() -- name: GetDefault
+        return "Basic"
+    end
+}
