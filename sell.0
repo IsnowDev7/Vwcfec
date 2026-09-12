@@ -3,10 +3,12 @@
 
 local v_u_1 = game:GetService("ProximityPromptService")
 local v_u_2 = game:GetService("ReplicatedStorage")
+local v_u_7 = game:GetService("Players")
 local v3 = {}
 local v_u_4 = false
 local v_u_5 = nil
 local v_u_6 = false
+local v_u_8 = nil
 function v3.Init(_) -- name: Init
     -- upvalues: (ref) v_u_4, (ref) v_u_5, (copy) v_u_2, (copy) v_u_1, (ref) v_u_6
     if not v_u_4 then
@@ -55,5 +57,59 @@ function v3.Init(_) -- name: Init
             end
         end)
     end
+end
+function v3.SetRarity(p9)
+    if p9 == nil or p9 == "" then
+        v_u_8 = nil
+    else
+        assert(typeof(p9) == "string", "Sell rarity must be a string")
+        v_u_8 = p9
+    end
+    return v_u_8
+end
+function v3.GetRarity()
+    return v_u_8
+end
+function v3.SellAllRarity(p10)
+    local v11 = p10 or v_u_8
+    if not v_u_5 or not v11 then
+        return 0
+    end
+    local v12 = v_u_7.LocalPlayer
+    local v13 = {}
+    local v14 = {v12:FindFirstChildOfClass("Backpack"), v12.Character}
+    for _, v15 in v14 do
+        if v15 then
+            for _, v16 in v15:GetChildren() do
+                if v16:IsA("Tool") and v16:GetAttribute("IsPetInventoryTool") == true then
+                    local v17 = v16:GetAttribute("Rarity") or v16:GetAttribute("AnimalRarity") or v16:GetAttribute("PetRarity")
+                    if typeof(v17) ~= "string" or v17 == "" then
+                        local v18 = v16:FindFirstChild("Rarity", true)
+                        v17 = v18 and v18:IsA("StringValue") and v18.Value or nil
+                    end
+                    if v17 == v11 then
+                        table.insert(v13, v16)
+                    end
+                end
+            end
+        end
+    end
+    local v19 = 0
+    for _, v20 in v13 do
+        local v21 = v12.Character
+        local v22 = v21 and v21:FindFirstChildOfClass("Humanoid")
+        if v22 then
+            pcall(function()
+                v22:EquipTool(v20)
+            end)
+            task.wait(0.05)
+            pcall(function()
+                v_u_5:FireServer()
+            end)
+            v19 += 1
+            task.wait(0.12)
+        end
+    end
+    return v19
 end
 return v3

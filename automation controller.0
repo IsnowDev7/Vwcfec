@@ -1,0 +1,234 @@
+-- Repository-native automation controller for the Vwcfec modules.
+-- This module exposes bounded configuration APIs for an external UI/menu.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Controller = {}
+local LocalPlayer = Players.LocalPlayer
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local PetInventory = Remotes:WaitForChild("PetInventory")
+local PlaceEggRequest = Remotes:FindFirstChild("PlaceEggRequest")
+local Sell = Remotes:FindFirstChild("Sell")
+
+local state = {
+    HatchEnabled = false,
+    HatchDelayMinutes = 1,
+    EquipBestEnabled = false,
+    EquipBestDelayMinutes = 1,
+    AntiAfkEnabled = false,
+    AntiAfkDelayMinutes = 5,
+    SellRarity = nil,
+}
+
+local threads = {}
+local snapshot = {}
+local notify = function() end
+
+local function clampMinutes(value, minimum, maximum, fallback)
+    local number = tonumber(value) or fallback
+    return math.clamp(number, minimum, maximum)
+end
+
+local function stopThread(name)
+    local thread = threads[name]
+    if thread then
+        task.cancel(thread)
+        threads[name] = nil
+    end
+end
+
+local function startLoop(name, callback)
+    stopThread(name)
+    threads[name] = task.spawn(function()
+        while state[name .. "Enabled"] do
+            callback()
+            local delay = state[name .. "DelayMinutes"] or 1
+            task.wait(delay * 60)
+        end
+    end)
+end
+
+function Controller.SetNotifier(callback)
+    notify = typeof(callback) == "function" and callback or function() end
+end
+
+function Controller.SetHatchDelay(minutes)
+    state.HatchDelayMinutes = clampMinutes(minutes, 1, 5, 1)
+    return state.HatchDelayMinutes
+end
+
+function Controller.SetEquipBestDelay(minutes)
+    state.EquipBestDelayMinutes = clampMinutes(minutes, 1, 5, 1)
+    return state.EquipBestDelayMinutes
+end
+
+function Controller.SetAntiAfkDelay(minutes)
+    state.AntiAfkDelayMinutes = clampMinutes(minutes, 1, 20, 5)
+    return state.AntiAfkDelayMinutes
+end
+
+function Controller.SetSellRarity(rarity)
+    if rarity == nil or rarity == "" then
+        state.SellRarity = nil
+        return nil
+    end
+    assert(typeof(rarity) == "string", "Sell rarity must be a string")
+    state.SellRarity = rarity
+    return rarity
+end
+
+function Controller.GetState()
+    return table.clone(state)
+end
+
+function Controller.StartAutoHatch()
+    state.HatchEnabled = true
+    startLoop("Hatch", function()
+        local now = workspace:GetServerTimeNow()
+        local acted = false
+        for _, item in ipairs(snapshot) do
+            if item.Kind == "Egg" and (tonumber(item.HatchAt) or 0) <= now then
+                acted = true
+                pcall(function()
+                    PetInventory:FireServer("EggAction", item.Id)
+                end)
+                task.wait(0.12)
+            end
+        end
+        if not acted and PlaceEggRequest then
+            pcall(function()
+                PlaceEggRequest:FireServer()
+            end)
+        end
+        pcall(function()
+            PetInventory:FireServer("Get")
+        end)
+    end)
+end
+
+function Controller.StopAutoHatch()
+    state.HatchEnabled = false
+    stopThread("Hatch")
+end
+
+function Controller.StartAutoEquipBest()
+    state.EquipBestEnabled = true
+    startLoop("EquipBest", function()
+        pcall(function()
+            PetInventory:FireServer("EquipBest")
+        end)
+    end)
+end
+
+function Controller.StopAutoEquipBest()
+    state.EquipBestEnabled = false
+    stopThread("EquipBest")
+end
+
+function Controller.StartAntiAfk()
+    state.AntiAfkEnabled = true
+    startLoop("AntiAfk", function()
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            notify("Anti-AFK", "Jumped to prevent inactivity disconnect.")
+        end
+    end)
+end
+
+function Controller.StopAntiAfk()
+    state.AntiAfkEnabled = false
+    stopThread("AntiAfk")
+end
+
+local function getPetTools()
+    local tools = {}
+    local containers = {
+        LocalPlayer:FindFirstChildOfClass("Backpack"),
+        LocalPlayer.Character,
+    }
+    for _, container in ipairs(containers) do
+        if container then
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool") and item:GetAttribute("IsPetInventoryTool") == true then
+                    table.insert(tools, item)
+                end
+            end
+        end
+    end
+    return tools
+end
+
+local function getToolRarity(tool)
+    for _, attribute in ipairs({"Rarity", "AnimalRarity", "PetRarity"}) do
+        local value = tool:GetAttribute(attribute)
+        if typeof(value) == "string" and value ~= "" then
+            return value
+        end
+    end
+    local value = tool:FindFirstChild("Rarity", true)
+    if value and value:IsA("StringValue") then
+        return value.Value
+    end
+    return nil
+end
+
+function Controller.SellAllSelectedRarity()
+    local rarity = state.SellRarity
+    if not rarity or not Sell then
+        return 0
+    end
+
+    local sold = 0
+    for _, tool in ipairs(getPetTools()) do
+        if getToolRarity(tool) == rarity then
+            local character = LocalPlayer.Character
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                pcall(function()
+                    humanoid:EquipTool(tool)
+                end)
+                task.wait(0.05)
+                pcall(function()
+                    Sell:FireServer()
+                end)
+                sold += 1
+                task.wait(0.12)
+            end
+        end
+    end
+    return sold
+end
+
+function Controller.StartAutoSell()
+    state.SellEnabled = true
+    startLoop("Sell", function()
+        Controller.SellAllSelectedRarity()
+    end)
+end
+
+function Controller.StopAutoSell()
+    state.SellEnabled = false
+    stopThread("Sell")
+end
+
+PetInventory.OnClientEvent:Connect(function(action, data)
+    if action == "Snapshot" and typeof(data) == "table" then
+        snapshot = data
+    end
+end)
+
+function Controller.GetSnapshot()
+    return snapshot
+end
+
+function Controller.Destroy()
+    Controller.StopAutoHatch()
+    Controller.StopAutoEquipBest()
+    Controller.StopAntiAfk()
+    Controller.StopAutoSell()
+end
+
+return Controller
