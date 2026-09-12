@@ -1,0 +1,822 @@
+-- Script Path: game:GetService("ReplicatedStorage").ClientModules.Controllers.Eggs.AnimalIndexController
+-- Took 0.11s to decompile.
+
+local v1 = game:GetService("Players")
+local v_u_2 = game:GetService("ReplicatedStorage")
+local v_u_3 = game:GetService("TweenService")
+local v4 = v_u_2:WaitForChild("Settings")
+local v_u_5 = require(v4:WaitForChild("Animals"))
+local v_u_6 = require(v4:WaitForChild("Areas"))
+local v_u_7 = require(v4:WaitForChild("Events"))
+local v_u_8 = require(v_u_2:WaitForChild("ClientModules"):WaitForChild("Shared"):WaitForChild("SuffixAbr"))
+local v9 = {}
+local v_u_10 = v1.LocalPlayer
+local v_u_11 = false
+local function v_u_17(p12) -- name: findAnimalAsset
+    -- upvalues: (copy) v_u_2
+    local v13 = v_u_2:FindFirstChild("Assets")
+    if v13 then
+        v13 = v13:FindFirstChild("Animals")
+    end
+    if not v13 then
+        return nil
+    end
+    local v14 = v13:FindFirstChild(p12)
+    if v14 and (v14:IsA("Model") or v14:IsA("BasePart")) then
+        return v14
+    end
+    local v15 = string.lower(p12)
+    for _, v16 in v13:GetDescendants() do
+        if string.lower(v16.Name) == v15 and (v16:IsA("Model") or v16:IsA("BasePart")) then
+            return v16
+        end
+    end
+    return nil
+end
+local function v_u_56(p18) -- name: getVisibleBounds
+    local v_u_19 = Vector3.new(inf, inf, inf)
+    local v_u_20 = Vector3.new(-inf, -inf, -inf)
+    local v_u_21 = false
+    local function v50(p22) -- name: includePart
+        -- upvalues: (ref) v_u_21, (ref) v_u_19, (ref) v_u_20
+        if p22.Transparency < 0.99 then
+            v_u_21 = true
+            local v23 = p22.Size * 0.5
+            for v24 = -1, 1, 2 do
+                for v25 = -1, 1, 2 do
+                    for v26 = -1, 1, 2 do
+                        local v27 = p22.CFrame
+                        local v28 = v23.X * v24
+                        local v29 = v23.Y * v25
+                        local v30 = v23.Z * v26
+                        local v31 = v27:PointToWorldSpace((Vector3.new(v28, v29, v30)))
+                        local v32 = v_u_19.X
+                        local v33 = v31.X
+                        local v34 = math.min(v32, v33)
+                        local v35 = v_u_19.Y
+                        local v36 = v31.Y
+                        local v37 = math.min(v35, v36)
+                        local v38 = v_u_19.Z
+                        local v39 = v31.Z
+                        local v40 = math.min(v38, v39)
+                        v_u_19 = Vector3.new(v34, v37, v40)
+                        local v41 = v_u_20.X
+                        local v42 = v31.X
+                        local v43 = math.max(v41, v42)
+                        local v44 = v_u_20.Y
+                        local v45 = v31.Y
+                        local v46 = math.max(v44, v45)
+                        local v47 = v_u_20.Z
+                        local v48 = v31.Z
+                        local v49 = math.max(v47, v48)
+                        v_u_20 = Vector3.new(v43, v46, v49)
+                    end
+                end
+            end
+        end
+    end
+    if p18:IsA("BasePart") then
+        v50(p18)
+    end
+    local v51 = v_u_19
+    local v52 = v_u_20
+    local v53 = v_u_21
+    for _, v54 in p18:GetDescendants() do
+        if v54:IsA("BasePart") then
+            v50(v54)
+        end
+    end
+    if v53 then
+        local v55 = v52 - v51
+        return CFrame.new((v51 + v52) * 0.5), v55
+    elseif p18:IsA("Model") then
+        return p18:GetBoundingBox()
+    elseif p18:IsA("BasePart") then
+        return p18.CFrame, p18.Size
+    else
+        return nil
+    end
+end
+local function v_u_59(p57) -- name: clearViewport
+    for _, v58 in p57:GetChildren() do
+        if v58:IsA("WorldModel") or v58:IsA("Camera") then
+            v58:Destroy()
+        end
+    end
+end
+local function v_u_62(p60) -- name: setSilhouette
+    for _, v61 in p60:GetDescendants() do
+        if v61:IsA("BasePart") then
+            v61.Color = Color3.new(0, 0, 0)
+            v61.Material = Enum.Material.SmoothPlastic
+        elseif v61:IsA("Decal") or (v61:IsA("Texture") or v61:IsA("SurfaceAppearance")) then
+            v61:Destroy()
+        elseif v61:IsA("ParticleEmitter") or (v61:IsA("Trail") or v61:IsA("Beam")) then
+            v61.Enabled = false
+        end
+    end
+    if p60:IsA("BasePart") then
+        p60.Color = Color3.new(0, 0, 0)
+        p60.Material = Enum.Material.SmoothPlastic
+    end
+end
+local function v_u_87(p63, p64, p65) -- name: renderAnimal
+    -- upvalues: (copy) v_u_59, (copy) v_u_17, (copy) v_u_62, (copy) v_u_56
+    if p63 and p63:IsA("ViewportFrame") then
+        p63.ImageColor3 = p65 and Color3.new(0, 0, 0) or Color3.new(1, 1, 1)
+        v_u_59(p63)
+        local v66 = v_u_17(p64)
+        local v67 = string.format
+        local v68 = assert(v66, v67("ReplicatedStorage.Assets.Animals is missing %q", p64))
+        local v69 = Instance.new("WorldModel")
+        v69.Parent = p63
+        local v70 = v68:Clone()
+        for _, v71 in v70:GetDescendants() do
+            if v71:IsA("Script") or v71:IsA("LocalScript") then
+                v71:Destroy()
+            elseif v71:IsA("BasePart") then
+                v71.Anchored = true
+                v71.CanCollide = false
+            end
+        end
+        if v70:IsA("BasePart") then
+            v70.Anchored = true
+            v70.CanCollide = false
+        end
+        if p65 then
+            v_u_62(v70)
+        end
+        v70.Parent = v69
+        local v72, v73 = v_u_56(v70)
+        local v74 = v70:GetFullName() .. " has no renderable bounds"
+        assert(v72 and v73, v74)
+        local v75 = v73.X
+        local v76 = v73.Y
+        local v77 = v73.Z
+        local v78 = math.max(v75, v76, v77, 1)
+        local v79
+        if v73.X >= v73.Z then
+            local v80 = v78 * 0.15
+            local v81 = v73.Y * 0.08
+            local v82 = v78 * 2.1
+            v79 = Vector3.new(v80, v81, v82)
+        else
+            local v83 = v78 * 2.1
+            local v84 = v73.Y * 0.08
+            local v85 = v78 * 0.15
+            v79 = Vector3.new(v83, v84, v85)
+        end
+        local v86 = Instance.new("Camera")
+        v86.FieldOfView = 35
+        v86.CFrame = CFrame.lookAt(v72.Position + v79, v72.Position)
+        v86.Parent = p63
+        p63.CurrentCamera = v86
+        p63.Ambient = Color3.new(1, 1, 1)
+        p63.LightColor = Color3.new(1, 1, 1)
+    end
+end
+function v9.RenderAnimal(p88, p89, p90) -- name: RenderAnimal
+    -- upvalues: (copy) v_u_87
+    v_u_87(p88, p89, p90)
+end
+local function v_u_96(p91) -- name: getAreaAnimalNames
+    -- upvalues: (copy) v_u_5
+    local v92 = {}
+    local v93 = {}
+    for _, v95 in p91.EggNames or {} do
+        if typeof(v95) == "table" then
+            local v95 = v95.Name or v95
+        end
+        if typeof(v95) == "string" and (v_u_5.Get(v95) and not v92[v95]) then
+            v92[v95] = true
+            table.insert(v93, v95)
+        end
+    end
+    return v93
+end
+local function v_u_105() -- name: getIndexSections
+    -- upvalues: (copy) v_u_6, (copy) v_u_96, (copy) v_u_5
+    local v97 = {}
+    for v98, v99 in v_u_6.List do
+        local v100 = {
+            ["Name"] = v99.Name,
+            ["AnimalNames"] = v_u_96(v99),
+            ["IndexSettings"] = v99.IndexSettings or {},
+            ["AreaIndex"] = v98
+        }
+        table.insert(v97, v100)
+    end
+    local v101 = v_u_5.EventIndex
+    if v101 then
+        local v102 = {
+            ["Name"] = v101.Name,
+            ["AnimalNames"] = v_u_5.GetEventIndexAnimalNames(),
+            ["IndexSettings"] = v101.IndexSettings or {},
+            ["Event"] = v101
+        }
+        table.insert(v97, v102)
+    end
+    local v103 = v_u_5.ExclusiveIndex
+    if v103 then
+        local v104 = {
+            ["Name"] = v103.Name or "Exclusives",
+            ["AnimalNames"] = v103.AnimalNames or {},
+            ["IndexSettings"] = v103.IndexSettings or {}
+        }
+        table.insert(v97, v104)
+    end
+    return v97
+end
+local function v_u_111(p106, p107) -- name: applyRarityGradient
+    -- upvalues: (copy) v_u_2
+    for _, v108 in p106:GetChildren() do
+        if v108:IsA("UIGradient") then
+            v108:Destroy()
+        end
+    end
+    if p107 then
+        local v109 = v_u_2:FindFirstChild("Assets")
+        if v109 then
+            v109 = v109:FindFirstChild("Rarities")
+        end
+        if v109 then
+            v109 = v109:FindFirstChild(p107)
+        end
+        if not (v109 and v109:IsA("UIGradient")) and v109 then
+            v109 = v109:FindFirstChildWhichIsA("UIGradient", true)
+        end
+        if v109 then
+            local v110 = v109:Clone()
+            v110.Name = "IndexRarityGradient"
+            v110.Parent = p106
+        end
+    end
+end
+local function v_u_119(p_u_112, p113) -- name: addCardEffect
+    -- upvalues: (copy) v_u_3
+    local v_u_114 = p_u_112:FindFirstChildWhichIsA("UIScale")
+    if not v_u_114 then
+        v_u_114 = Instance.new("UIScale")
+        v_u_114.Parent = p_u_112
+    end
+    local v_u_115 = nil
+    local function v_u_118(p116, p117) -- name: tweenTo
+        -- upvalues: (ref) v_u_115, (ref) v_u_3, (ref) v_u_114
+        if v_u_115 then
+            v_u_115:Cancel()
+        end
+        v_u_115 = v_u_3:Create(v_u_114, TweenInfo.new(p117, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            ["Scale"] = p116
+        })
+        v_u_115:Play()
+    end
+    p113.MouseEnter:Connect(function()
+        -- upvalues: (copy) v_u_118
+        v_u_118(1.05, 0.15)
+    end)
+    p113.MouseLeave:Connect(function()
+        -- upvalues: (copy) v_u_118
+        v_u_118(1, 0.15)
+    end)
+    p113.MouseButton1Down:Connect(function()
+        -- upvalues: (copy) v_u_118, (copy) p_u_112
+        v_u_118(0.94, 0.08)
+        task.delay(0.08, function()
+            -- upvalues: (ref) p_u_112, (ref) v_u_118
+            if p_u_112.Parent then
+                v_u_118(1.05, 0.12)
+            end
+        end)
+    end)
+end
+function v9.Init() -- name: Init
+    -- upvalues: (ref) v_u_11, (copy) v_u_10, (copy) v_u_2, (copy) v_u_3, (copy) v_u_5, (copy) v_u_8, (copy) v_u_111, (copy) v_u_87, (copy) v_u_105, (copy) v_u_7, (copy) v_u_6, (copy) v_u_119
+    if v_u_11 then
+        return
+    else
+        v_u_11 = true
+        local v_u_120 = v_u_10:WaitForChild("PlayerGui"):WaitForChild("UI", 20)
+        local v121
+        if v_u_120 then
+            v121 = v_u_120:WaitForChild("Pages", 20)
+        else
+            v121 = v_u_120
+        end
+        if v_u_120 then
+            v_u_120 = v_u_120:WaitForChild("HUD", 20)
+        end
+        if v_u_120 then
+            v_u_120 = v_u_120:WaitForChild("RightButtons", 20)
+        end
+        if v_u_120 then
+            v_u_120 = v_u_120:WaitForChild("Index", 20)
+        end
+        if v_u_120 then
+            v_u_120 = v_u_120:WaitForChild("Amount", 20)
+        end
+        local v_u_122
+        if v_u_120 then
+            v_u_122 = v_u_120:WaitForChild("TextLabel", 20)
+        else
+            v_u_122 = v_u_120
+        end
+        if v121 then
+            v121 = v121:WaitForChild("Index", 20)
+        end
+        local v_u_123
+        if v121 then
+            v_u_123 = v121:WaitForChild("Main", 20)
+        else
+            v_u_123 = v121
+        end
+        local v_u_124
+        if v_u_123 then
+            v_u_124 = v_u_123:WaitForChild("Title", 20)
+        else
+            v_u_124 = v_u_123
+        end
+        if v_u_124 then
+            v_u_124 = v_u_124:WaitForChild("ClaimAll", 20)
+        end
+        local v_u_125
+        if v_u_124 then
+            v_u_125 = v_u_124:WaitForChild("Amount", 20)
+        else
+            v_u_125 = v_u_124
+        end
+        local v_u_126
+        if v_u_125 then
+            v_u_126 = v_u_125:WaitForChild("TextLabel", 20)
+        else
+            v_u_126 = v_u_125
+        end
+        local v127
+        if v_u_123 then
+            v127 = v_u_123:WaitForChild("ScrollingFrame", 20)
+        else
+            v127 = v_u_123
+        end
+        if v_u_123 then
+            v_u_123 = v_u_123:WaitForChild("Info", 20)
+        end
+        local v128 = v_u_2:WaitForChild("Assets"):WaitForChild("UIObjects")
+        local v129 = v128:FindFirstChild("MapTemplate")
+        if not v129 then
+            if v127 then
+                v129 = v127:FindFirstChild("MapTemplate")
+            else
+                v129 = v127
+            end
+        end
+        local v130 = v128:FindFirstChild("IndexTemp")
+        if v130 then
+            v121 = v130
+        elseif v121 then
+            v121 = v121:FindFirstChild("IndexTemp", true)
+        end
+        local v_u_131 = v_u_10:WaitForChild("AnimalIndex", 30)
+        local v_u_132
+        if v_u_131 then
+            v_u_132 = v_u_131:WaitForChild("Discovered", 20)
+        else
+            v_u_132 = v_u_131
+        end
+        if v_u_131 then
+            v_u_131 = v_u_131:WaitForChild("Claimed", 20)
+        end
+        local v_u_133 = v_u_2:WaitForChild("Remotes"):WaitForChild("ClaimAnimalIndexReward", 10)
+        if v127 and (v_u_123 and (v129 and (v121 and (v_u_132 and v_u_131)))) then
+            local v134
+            if v_u_120 then
+                v134 = v_u_120:IsA("GuiObject")
+            else
+                v134 = v_u_120
+            end
+            assert(v134, "UI.HUD.RightButtons.Index.Amount must be a GuiObject")
+            local v135 = not v_u_122 or v_u_122:IsA("TextLabel") or (v_u_122:IsA("TextButton") or v_u_122:IsA("TextBox"))
+            assert(v135, "UI.HUD.RightButtons.Index.Amount.TextLabel must be a text object")
+            local v136
+            if v_u_124 then
+                v136 = v_u_124:IsA("GuiButton")
+            else
+                v136 = v_u_124
+            end
+            assert(v136, "UI.Pages.Index.Main.Title.ClaimAll must be a GuiButton")
+            local v137
+            if v_u_125 then
+                v137 = v_u_125:IsA("GuiObject")
+            else
+                v137 = v_u_125
+            end
+            assert(v137, "UI.Pages.Index.Main.Title.ClaimAll.Amount must be a GuiObject")
+            local v138 = not v_u_126 or v_u_126:IsA("TextLabel") or (v_u_126:IsA("TextButton") or v_u_126:IsA("TextBox"))
+            assert(v138, "UI.Pages.Index.Main.Title.ClaimAll.Amount.TextLabel must be a text object")
+            local v139 = v129:Clone()
+            local v140 = v121:Clone()
+            for _, v141 in v127:GetChildren() do
+                if v141:IsA("Frame") and (v141.Name ~= "Spacer_top" and v141.Name ~= "Spacer_bottom") then
+                    v141:Destroy()
+                end
+            end
+            v_u_123.Visible = false
+            local v_u_142 = v_u_123:FindFirstChild("Viewport")
+            local v_u_143 = v_u_123:FindFirstChild("AnimalName1")
+            local v_u_144 = v_u_123:FindFirstChild("AnimalName2")
+            local v_u_145 = v_u_123:FindFirstChild("CPS")
+            local v_u_146 = v_u_123:FindFirstChild("Claim")
+            local v_u_147 = v_u_123:FindFirstChild("RarityTier")
+            if v_u_147 then
+                v_u_147 = v_u_147:FindFirstChild("TextLabel")
+            end
+            local v_u_148 = v_u_123:FindFirstChild("Rewards")
+            local v_u_149
+            if v_u_148 then
+                v_u_149 = v_u_148:FindFirstChild("CashReward")
+            else
+                v_u_149 = v_u_148
+            end
+            if v_u_149 then
+                v_u_149 = v_u_149:FindFirstChild("Title")
+            end
+            local v_u_150
+            if v_u_148 then
+                v_u_150 = v_u_148:FindFirstChild("Jump")
+            else
+                v_u_150 = v_u_148
+            end
+            if v_u_150 then
+                v_u_150 = v_u_150:FindFirstChild("Title")
+            end
+            if v_u_142 and v_u_142:IsA("ViewportFrame") and ((not v_u_143 or v_u_143:IsA("TextLabel") or (v_u_143:IsA("TextButton") or v_u_143:IsA("TextBox"))) and ((not v_u_144 or v_u_144:IsA("TextLabel") or (v_u_144:IsA("TextButton") or v_u_144:IsA("TextBox"))) and ((not v_u_145 or v_u_145:IsA("TextLabel") or (v_u_145:IsA("TextButton") or v_u_145:IsA("TextBox"))) and (v_u_146 and v_u_146:IsA("GuiButton")) and ((not v_u_147 or v_u_147:IsA("TextLabel") or (v_u_147:IsA("TextButton") or v_u_147:IsA("TextBox"))) and ((not v_u_149 or v_u_149:IsA("TextLabel") or (v_u_149:IsA("TextButton") or v_u_149:IsA("TextBox"))) and (not v_u_150 or v_u_150:IsA("TextLabel") or (v_u_150:IsA("TextButton") or v_u_150:IsA("TextBox")))))))) then
+                local v_u_151 = nil
+                local v_u_152 = {}
+                local v_u_153 = {}
+                local v_u_154 = v_u_120:FindFirstChildWhichIsA("UIScale")
+                if not v_u_154 then
+                    v_u_154 = Instance.new("UIScale")
+                    v_u_154.Name = "IndexClaimReminderScale"
+                    v_u_154.Parent = v_u_120
+                end
+                local v_u_155 = v_u_154.Scale
+                local v_u_156 = v_u_120.Rotation
+                local v_u_157 = Random.new()
+                local function v_u_174() -- name: playClaimReminder
+                    -- upvalues: (copy) v_u_120, (ref) v_u_3, (ref) v_u_154, (copy) v_u_155, (copy) v_u_156
+                    if v_u_120.Visible and v_u_120.Parent then
+                        v_u_3:Create(v_u_154, TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                            ["Scale"] = v_u_155 * 1.22
+                        }):Play()
+                        local v158 = Enum.EasingStyle.Sine
+                        local v159 = {
+                            ["Rotation"] = v_u_156 - 8
+                        }
+                        local v160 = v_u_3:Create(v_u_120, TweenInfo.new(0.09, v158, Enum.EasingDirection.Out), v159)
+                        v160:Play()
+                        v160.Completed:Wait()
+                        local v161 = Enum.EasingStyle.Sine
+                        local v162 = {
+                            ["Rotation"] = v_u_156 + 8
+                        }
+                        local v163 = v_u_3:Create(v_u_120, TweenInfo.new(0.08, v161, Enum.EasingDirection.Out), v162)
+                        v163:Play()
+                        v163.Completed:Wait()
+                        local v164 = Enum.EasingStyle.Sine
+                        local v165 = {
+                            ["Rotation"] = v_u_156 - 5
+                        }
+                        local v166 = v_u_3:Create(v_u_120, TweenInfo.new(0.07, v164, Enum.EasingDirection.Out), v165)
+                        v166:Play()
+                        v166.Completed:Wait()
+                        local v167 = Enum.EasingStyle.Sine
+                        local v168 = {
+                            ["Rotation"] = v_u_156 + 3
+                        }
+                        local v169 = v_u_3:Create(v_u_120, TweenInfo.new(0.07, v167, Enum.EasingDirection.Out), v168)
+                        v169:Play()
+                        v169.Completed:Wait()
+                        local v170 = Enum.EasingStyle.Sine
+                        local v171 = {
+                            ["Rotation"] = v_u_156
+                        }
+                        local v172 = v_u_3:Create(v_u_120, TweenInfo.new(0.1, v170, Enum.EasingDirection.Out), v171)
+                        v172:Play()
+                        v172.Completed:Wait()
+                        local v173 = {
+                            ["Scale"] = v_u_155
+                        }
+                        v_u_3:Create(v_u_154, TweenInfo.new(0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), v173):Play()
+                    end
+                end
+                local function v_u_183() -- name: updateClaimIndicators
+                    -- upvalues: (ref) v_u_5, (copy) v_u_132, (copy) v_u_131, (copy) v_u_120, (copy) v_u_122, (copy) v_u_124, (copy) v_u_125, (copy) v_u_126
+                    local v175 = 0
+                    for v176, v177 in v_u_5.List do
+                        if v_u_5.HasIndexReward(v177) then
+                            local v178 = v_u_132:FindFirstChild(v176)
+                            local v179 = v178 and v178:IsA("BoolValue")
+                            if v179 then
+                                v179 = v178.Value == true
+                            end
+                            if v179 then
+                                local v180 = v_u_131:FindFirstChild(v176)
+                                local v181 = v180 and v180:IsA("BoolValue")
+                                if v181 then
+                                    v181 = v180.Value == true
+                                end
+                                if not v181 then
+                                    v175 = v175 + 1
+                                end
+                            end
+                        end
+                    end
+                    local v182 = v175 > 0
+                    v_u_120.Visible = v182
+                    v_u_122.Text = tostring(v175)
+                    v_u_124.Visible = v182
+                    v_u_125.Visible = v182
+                    v_u_126.Text = tostring(v175)
+                end
+                local function v_u_198() -- name: updateInfo
+                    -- upvalues: (ref) v_u_151, (copy) v_u_123, (ref) v_u_5, (copy) v_u_132, (copy) v_u_131, (copy) v_u_148, (copy) v_u_143, (copy) v_u_144, (copy) v_u_145, (ref) v_u_8, (copy) v_u_147, (ref) v_u_111, (copy) v_u_149, (copy) v_u_150, (copy) v_u_146, (ref) v_u_87, (copy) v_u_142
+                    if v_u_151 then
+                        local v184 = v_u_5.Get(v_u_151)
+                        local v185 = v_u_132:FindFirstChild(v_u_151)
+                        local v186 = v185 and v185:IsA("BoolValue")
+                        if v186 then
+                            v186 = v185.Value == true
+                        end
+                        local v187 = v_u_131:FindFirstChild(v_u_151)
+                        local v188 = v187 and v187:IsA("BoolValue")
+                        if v188 then
+                            v188 = v187.Value == true
+                        end
+                        local v189 = v186 and v_u_151 or "???"
+                        local v190 = v184.IndexReward or {}
+                        local v191 = v_u_5.HasIndexReward(v184)
+                        v_u_123.Visible = true
+                        if v_u_148 and v_u_148:IsA("GuiObject") then
+                            v_u_148.Visible = v191
+                        end
+                        v_u_143.Text = v189
+                        v_u_144.Text = v189
+                        local v192 = v184.CPSPercentOfBest
+                        local v193 = tonumber(v192)
+                        local v194 = v_u_145
+                        local v195
+                        if v186 then
+                            if v193 then
+                                v195 = string.format("%g%% of Best", v193)
+                            else
+                                v195 = "$" .. v_u_8.Format(v184.CashPerSecond or 0) .. "/s"
+                            end
+                        else
+                            v195 = "???"
+                        end
+                        v194.Text = v195
+                        v_u_147.Text = v184.Rarity or "Basic"
+                        v_u_111(v_u_147, v184.RarityGradient or (v184.Rarity or "Basic"))
+                        v_u_149.Text = "$" .. v_u_8.Format(v190.Cash or 0)
+                        v_u_150.Text = "+" .. v_u_8.Format(v190.JumpXP or 0) .. " XP"
+                        local v196 = v_u_146
+                        if v186 then
+                            local v197 = not v188
+                            if not v197 then
+                                v191 = v197
+                            end
+                        else
+                            v191 = v186
+                        end
+                        v196.Visible = v191
+                        v_u_87(v_u_142, v_u_151, not v186)
+                    else
+                        v_u_123.Visible = false
+                    end
+                end
+                v_u_146.MouseButton1Down:Connect(function()
+                    -- upvalues: (ref) v_u_151, (copy) v_u_146, (copy) v_u_133
+                    if v_u_151 and (v_u_146.Visible and (v_u_133 and v_u_133:IsA("RemoteEvent"))) then
+                        v_u_133:FireServer(v_u_151)
+                    end
+                end)
+                v_u_124.MouseButton1Down:Connect(function()
+                    -- upvalues: (copy) v_u_124, (copy) v_u_133
+                    if v_u_124.Visible and (v_u_133 and v_u_133:IsA("RemoteEvent")) then
+                        v_u_133:FireServer("__ALL__")
+                    end
+                end)
+                local v_u_199 = workspace:WaitForChild("Map", 10)
+                for v200, v_u_201 in v_u_105() do
+                    local v_u_202 = v139:Clone()
+                    v_u_202.Name = v_u_201.Name
+                    v_u_202.LayoutOrder = v200
+                    v_u_202.Visible = true
+                    v_u_202.Parent = v127
+                    if v_u_201.Event then
+                        local v_u_203 = v_u_201.Event
+                        local v_u_204 = v_u_7.GetAttributeName(v_u_203.EventName, "Active")
+                        local function v210() -- name: refreshEventVisibility
+                            -- upvalues: (copy) v_u_201, (copy) v_u_132, (copy) v_u_202, (copy) v_u_203, (copy) v_u_199, (copy) v_u_204
+                            local v205 = false
+                            for _, v206 in v_u_201.AnimalNames do
+                                local v207 = v_u_132:FindFirstChild(v206)
+                                local v208 = v207 and v207:IsA("BoolValue")
+                                if v208 then
+                                    v208 = v207.Value == true
+                                end
+                                if v208 then
+                                    v205 = true
+                                    break
+                                end
+                            end
+                            local v209 = v_u_202
+                            if v_u_203.AlwaysShow == true then
+                                v205 = true
+                            elseif not v205 then
+                                if v_u_199 == nil or v_u_204 == nil then
+                                    v205 = false
+                                else
+                                    v205 = v_u_199:GetAttribute(v_u_204) == true
+                                end
+                            end
+                            v209.Visible = v205
+                        end
+                        v210()
+                        table.insert(v_u_153, v210)
+                        if v_u_199 and v_u_204 then
+                            v_u_199:GetAttributeChangedSignal(v_u_204):Connect(v210)
+                        end
+                    end
+                    local v211 = v_u_202:FindFirstChild("MapName")
+                    local v212 = v_u_202:FindFirstChild("Animals")
+                    local v213 = v_u_202:FindFirstChild("LoadingBar")
+                    local v_u_214
+                    if v213 then
+                        v_u_214 = v213:FindFirstChild("LoadingBar")
+                    else
+                        v_u_214 = v213
+                    end
+                    local v_u_215
+                    if v213 then
+                        v_u_215 = v213:FindFirstChild("IndexLevel")
+                    else
+                        v_u_215 = v213
+                    end
+                    if v213 then
+                        v213 = v213:FindFirstChild("RewardImage")
+                    end
+                    if not v211 or v211:IsA("TextLabel") or (v211:IsA("TextButton") or v211:IsA("TextBox")) then
+                        v211.Text = v_u_201.Name
+                    end
+                    if v213 and (v213:IsA("ImageLabel") or v213:IsA("ImageButton")) then
+                        local v216 = v_u_201.IndexSettings or {}
+                        v213.Visible = v216.ShowRewardImage ~= false
+                        v213.Image = v216.RewardImage or (v_u_6.IndexRewardImage or "")
+                        v213.ImageColor3 = v216.ImageColor3 or (v_u_6.IndexRewardImageColors and v_u_6.IndexRewardImageColors[v_u_201.AreaIndex] or Color3.new(1, 1, 1))
+                    end
+                    if v212 and (v_u_214 and (v_u_214:IsA("GuiObject") and v_u_215)) then
+                        for _, v217 in v212:GetChildren() do
+                            if v217:IsA("Frame") then
+                                v217:Destroy()
+                            end
+                        end
+                        local v_u_218 = v_u_201.AnimalNames
+                        local function v226() -- name: updateMapProgress
+                            -- upvalues: (copy) v_u_218, (copy) v_u_132, (copy) v_u_215, (ref) v_u_3, (copy) v_u_214
+                            local v219 = 0
+                            for _, v220 in v_u_218 do
+                                local v221 = v_u_132:FindFirstChild(v220)
+                                local v222 = v221 and v221:IsA("BoolValue")
+                                if v222 then
+                                    v222 = v221.Value == true
+                                end
+                                if v222 then
+                                    v219 = v219 + 1
+                                end
+                            end
+                            local v223 = #v_u_218
+                            local v224 = v223 > 0 and (v219 / v223 or 0) or 0
+                            local v225 = v_u_215
+                            if not v225 or v225:IsA("TextLabel") or (v225:IsA("TextButton") or v225:IsA("TextBox")) then
+                                v_u_215.Text = string.format("%d/%d", v219, v223)
+                            end
+                            v_u_3:Create(v_u_214, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                                ["Size"] = UDim2.new(v224, 0, 1, 0)
+                            }):Play()
+                        end
+                        table.insert(v_u_153, v226)
+                        for v227, v_u_228 in v_u_218 do
+                            local v229 = v140:Clone()
+                            v229.Name = v_u_228
+                            v229.LayoutOrder = v227
+                            v229.Visible = true
+                            v229.Parent = v212
+                            local v_u_230 = v229:FindFirstChild("Main")
+                            local v231
+                            if v_u_230 then
+                                v231 = v_u_230:FindFirstChild("Detector")
+                            else
+                                v231 = v_u_230
+                            end
+                            local v_u_232
+                            if v_u_230 then
+                                v_u_232 = v_u_230:FindFirstChild("Viewport")
+                            else
+                                v_u_232 = v_u_230
+                            end
+                            local v_u_233
+                            if v_u_230 then
+                                v_u_233 = v_u_230:FindFirstChild("AnimalName")
+                            else
+                                v_u_233 = v_u_230
+                            end
+                            local v234 = v229:GetFullName() .. ".Main is missing"
+                            assert(v_u_230, v234)
+                            local v235 = v_u_230:GetFullName() .. ".Detector is missing"
+                            assert(v231, v235)
+                            local v236 = v231:IsA("GuiButton")
+                            local v237 = v231:GetFullName() .. " must be a GuiButton, got " .. v231.ClassName
+                            assert(v236, v237)
+                            local v238 = v_u_230:GetFullName() .. ".Viewport is missing"
+                            assert(v_u_232, v238)
+                            local v239 = v_u_232:IsA("ViewportFrame")
+                            local v240 = v_u_232:GetFullName() .. " must be a ViewportFrame, got " .. v_u_232.ClassName
+                            assert(v239, v240)
+                            local v241 = v_u_230:GetFullName() .. ".AnimalName is missing"
+                            assert(v_u_233, v241)
+                            local v242 = not v_u_233 or v_u_233:IsA("TextLabel") or (v_u_233:IsA("TextButton") or v_u_233:IsA("TextBox"))
+                            local v243 = v_u_233:GetFullName() .. " must be a text object, got " .. v_u_233.ClassName
+                            assert(v242, v243)
+                            local function v247() -- name: refreshCard
+                                -- upvalues: (copy) v_u_132, (copy) v_u_228, (copy) v_u_233, (ref) v_u_5, (ref) v_u_111, (copy) v_u_230, (ref) v_u_87, (copy) v_u_232
+                                local v244 = v_u_132:FindFirstChild(v_u_228)
+                                local v245 = v244 and v244:IsA("BoolValue")
+                                if v245 then
+                                    v245 = v244.Value == true
+                                end
+                                v_u_233.Text = v245 and v_u_228 or "???"
+                                local v246 = v_u_5.Get(v_u_228)
+                                v_u_111(v_u_230, not v246 or v246.RarityGradient or (v246.Rarity or "Basic"))
+                                v_u_87(v_u_232, v_u_228, not v245)
+                            end
+                            v_u_152[v_u_228] = v_u_152[v_u_228] or {}
+                            local v248 = v_u_152[v_u_228]
+                            table.insert(v248, v247)
+                            v_u_119(v_u_230, v231)
+                            v231.MouseButton1Down:Connect(function()
+                                -- upvalues: (ref) v_u_151, (copy) v_u_228, (copy) v_u_198
+                                v_u_151 = v_u_228
+                                v_u_198()
+                            end)
+                            v247()
+                        end
+                        v226()
+                    else
+                        warn("[AnimalIndexController] MapTemplate is missing Animals or LoadingBar content")
+                    end
+                end
+                for v_u_249 in v_u_5.List do
+                    local v250 = v_u_132:FindFirstChild(v_u_249)
+                    if v250 and v250:IsA("BoolValue") then
+                        v250.Changed:Connect(function()
+                            -- upvalues: (copy) v_u_152, (copy) v_u_249, (copy) v_u_153, (ref) v_u_151, (copy) v_u_198, (copy) v_u_183
+                            for _, v251 in v_u_152[v_u_249] or {} do
+                                v251()
+                            end
+                            for _, v252 in v_u_153 do
+                                v252()
+                            end
+                            if v_u_151 == v_u_249 then
+                                v_u_198()
+                            end
+                            v_u_183()
+                        end)
+                    end
+                    local v253 = v_u_131:FindFirstChild(v_u_249)
+                    if v253 and v253:IsA("BoolValue") then
+                        v253.Changed:Connect(function()
+                            -- upvalues: (ref) v_u_151, (copy) v_u_249, (copy) v_u_198, (copy) v_u_183
+                            if v_u_151 == v_u_249 then
+                                v_u_198()
+                            end
+                            v_u_183()
+                        end)
+                    end
+                end
+                v_u_183()
+                task.spawn(function()
+                    -- upvalues: (copy) v_u_120, (copy) v_u_157, (copy) v_u_174
+                    while v_u_120.Parent do
+                        task.wait(v_u_157:NextNumber(4, 7))
+                        v_u_174()
+                    end
+                end)
+            else
+                warn("[AnimalIndexController] Pages.Index.Main.Info has missing objects")
+            end
+        else
+            warn("[AnimalIndexController] Index page, templates, or replicated Index data is missing")
+            return
+        end
+    end
+end
+return v9

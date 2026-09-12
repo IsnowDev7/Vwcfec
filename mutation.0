@@ -1,0 +1,238 @@
+-- Script Path: game:GetService("ReplicatedStorage").ClientModules.Controllers.MutationController
+-- Took 0.02s to decompile.
+
+local v_u_1 = game:GetService("Players")
+local v_u_2 = game:GetService("ReplicatedStorage")
+local v_u_3 = require(v_u_2:WaitForChild("Settings"):WaitForChild("Mutations"))
+local v4 = {}
+local v_u_5 = v_u_1.LocalPlayer
+local v_u_6 = false
+local v_u_7 = nil
+local v_u_8 = nil
+local function v_u_13(p9, p10) -- name: scaleInstance
+    local v11 = tonumber(p10) or 1
+    local v12 = math.max(v11, 0.01)
+    if p9:IsA("Model") then
+        p9:ScaleTo(p9:GetScale() * v12)
+    elseif p9:IsA("BasePart") then
+        p9.Size = p9.Size * v12
+    end
+end
+local function v_u_21(p14, p15) -- name: findAnimal
+    -- upvalues: (copy) v_u_2
+    local v16 = v_u_2:WaitForChild("Assets")
+    for _, v17 in p15 and { "GoldenAnimals", "Animals" } or { "Animals" } do
+        local v18 = v16:FindFirstChild(v17)
+        if v18 then
+            local v19 = v18:FindFirstChild(p14)
+            if v19 and (v19:IsA("Model") or v19:IsA("BasePart")) then
+                return v19
+            end
+            for _, v20 in v18:GetDescendants() do
+                if v20.Name == p14 and (v20:IsA("Model") or v20:IsA("BasePart")) then
+                    return v20
+                end
+            end
+        end
+    end
+    return nil
+end
+local function v_u_50(p22, p23, p24, p25) -- name: showAnimal
+    -- upvalues: (ref) v_u_7, (ref) v_u_8, (copy) v_u_21, (copy) v_u_3, (copy) v_u_13
+    local v26 = string.format("%s:%s", p25 and "Gold" or "Normal", p24)
+    if v_u_7 == v26 and (v_u_8 and v_u_8.Parent) then
+        return
+    else
+        if v_u_8 then
+            v_u_8:Destroy()
+            v_u_8 = nil
+        end
+        v_u_7 = nil
+        local v27 = v_u_21(p24, p25)
+        if v27 then
+            local v28 = v27:Clone()
+            v28.Name = "LocalMutationAnimal"
+            for _, v29 in v28:GetDescendants() do
+                if v29:IsA("Script") or (v29:IsA("LocalScript") or v29:IsA("ProximityPrompt")) then
+                    v29:Destroy()
+                elseif v29:IsA("BasePart") then
+                    v29.Anchored = true
+                    v29.CanCollide = false
+                    v29.CanTouch = false
+                    v29.CanQuery = false
+                end
+            end
+            if v28:IsA("BasePart") then
+                v28.Anchored = true
+                v28.CanCollide = false
+                v28.CanTouch = false
+                v28.CanQuery = false
+            end
+            v28.Parent = p22
+            local v30, v31
+            if v28:IsA("Model") then
+                v30, v31 = v28:GetBoundingBox()
+            elseif v28:IsA("BasePart") then
+                v30 = v28.CFrame
+                v31 = v28.Size
+            else
+                v30 = nil
+                v31 = nil
+            end
+            local v32
+            if v28:IsA("Model") then
+                v32 = v28:GetPivot()
+            elseif v28:IsA("BasePart") then
+                v32 = v28.CFrame
+            else
+                v32 = nil
+            end
+            if v30 and v32 then
+                local v33 = v_u_3.Machine.VisualFillFraction
+                local v34 = tonumber(v33) or 0.65
+                local v35 = math.clamp(v34, 0.1, 1)
+                local v36 = p23.Size.X * v35
+                local v37 = p23.Size.Y * v35
+                local v38 = p23.Size.Z * v35
+                local v39 = v31.X
+                local v40 = v36 / math.max(v39, 0.01)
+                local v41 = v31.Y
+                local v42 = v37 / math.max(v41, 0.01)
+                local v43 = v31.Z
+                local v44 = v38 / math.max(v43, 0.01)
+                local v45 = math.min(v40, v42, v44, 1)
+                if v45 < 1 then
+                    v_u_13(v28, (math.max(v45, 0.05)))
+                end
+                local v46, v47
+                if v28:IsA("Model") then
+                    v46, v47 = v28:GetBoundingBox()
+                elseif v28:IsA("BasePart") then
+                    v46 = v28.CFrame
+                    v47 = v28.Size
+                else
+                    v46 = nil
+                    v47 = nil
+                end
+                local v48
+                if v28:IsA("Model") then
+                    v48 = v28:GetPivot()
+                elseif v28:IsA("BasePart") then
+                    v48 = v28.CFrame
+                else
+                    v48 = nil
+                end
+                local v49 = p23.CFrame * v46:ToObjectSpace(v48) * CFrame.Angles(0, 1.5707963267948966, 0)
+                if v28:IsA("Model") then
+                    v28:PivotTo(v49)
+                elseif v28:IsA("BasePart") then
+                    v28.CFrame = v49
+                end
+                v_u_7 = v26
+                v_u_8 = v28
+            else
+                v28:Destroy()
+            end
+        else
+            return
+        end
+    end
+end
+function v4.Init() -- name: Init
+    -- upvalues: (ref) v_u_6, (copy) v_u_5, (copy) v_u_1, (copy) v_u_3, (copy) v_u_50, (ref) v_u_8, (ref) v_u_7
+    if not v_u_6 then
+        v_u_6 = true
+        local v_u_51 = workspace:WaitForChild("Map"):WaitForChild("Mutations")
+        local v52 = v_u_51:WaitForChild("Detector")
+        local v_u_53 = v_u_51:WaitForChild("Area")
+        local v_u_54 = v52:WaitForChild("MutationPrompt")
+        local v_u_55 = v52:WaitForChild("MutationRemovePrompt")
+        local v_u_56 = v_u_51:WaitForChild("t"):WaitForChild("Attachment"):WaitForChild("Sell"):WaitForChild("Bottom")
+        local v57 = v52:IsA("BasePart")
+        assert(v57, "Workspace.Map.Mutations.Detector must be a BasePart")
+        local v58 = v_u_53:IsA("BasePart")
+        assert(v58, "Workspace.Map.Mutations.Area must be a BasePart")
+        local v59 = v_u_54:IsA("ProximityPrompt")
+        assert(v59, "Map.Mutations.Detector.MutationPrompt must be a ProximityPrompt")
+        local v60 = v_u_55:IsA("ProximityPrompt")
+        assert(v60, "Map.Mutations.Detector.MutationRemovePrompt must be a ProximityPrompt")
+        local v61 = v_u_56:IsA("TextLabel") or (v_u_56:IsA("TextButton") or v_u_56:IsA("TextBox"))
+        assert(v61, "Map.Mutations.t.Attachment.Sell.Bottom must be a text object")
+        task.spawn(function()
+            -- upvalues: (ref) v_u_5, (ref) v_u_1, (ref) v_u_3, (copy) v_u_55, (copy) v_u_56, (copy) v_u_54, (ref) v_u_50, (copy) v_u_51, (copy) v_u_53, (ref) v_u_8, (ref) v_u_7
+            while v_u_5:IsDescendantOf(v_u_1) do
+                local v62 = v_u_5:GetAttribute("MutationCraftActive") == true
+                local v63 = v_u_5:GetAttribute("MutationCraftReady") == true
+                local v64 = v_u_5
+                local v65 = tonumber(v64:GetAttribute("MutationStoredCount")) or 0
+                local v66 = math.floor(v65)
+                local v67 = v_u_3.Machine.RequiredMatchingPets
+                local v68 = math.clamp(v66, 0, v67)
+                local v69 = v_u_5:GetAttribute("MutationCraftAnimalName")
+                v_u_55.Enabled = v_u_5:GetAttribute("MutationCanRemove") == true
+                if v62 then
+                    local v70 = v_u_5
+                    local v71 = tonumber(v70:GetAttribute("MutationCraftFinishAt")) or 0
+                    v_u_56.Text = string.format("%d/%d", v_u_3.Machine.RequiredMatchingPets, v_u_3.Machine.RequiredMatchingPets)
+                    v_u_54.ActionText = v63 and "Claim!" or "Crafting"
+                    local v72 = v_u_54
+                    local v73
+                    if v63 then
+                        v73 = string.format("Gold %s", (tostring(v69 or "Animal")))
+                    else
+                        local v74 = v71 - workspace:GetServerTimeNow()
+                        local v75 = tonumber(v74) or 0
+                        local v76 = math.ceil(v75)
+                        local v77 = math.max(v76, 0)
+                        local v78 = v77 / 60
+                        local v79 = math.floor(v78)
+                        v73 = string.format("%d:%02d", v79, v77 % 60)
+                    end
+                    v72.ObjectText = v73
+                    if typeof(v69) == "string" and v69 ~= "" then
+                        v_u_50(v_u_51, v_u_53, v69, v63)
+                    end
+                else
+                    local v80 = v_u_5.Character
+                    if v80 then
+                        v80 = v80:FindFirstChildWhichIsA("Tool")
+                    end
+                    local v81
+                    if v80 and v80:GetAttribute("IsPetInventoryTool") == true then
+                        v81 = v80:GetAttribute("AnimalName")
+                    else
+                        v81 = nil
+                    end
+                    v_u_56.Text = string.format("%d/%d", v68, v_u_3.Machine.RequiredMatchingPets)
+                    v_u_54.ActionText = v_u_3.Machine.ActionText
+                    local v82 = v_u_54
+                    local v83
+                    if typeof(v69) == "string" and v69 ~= "" then
+                        v83 = string.format("%s (%d/%d)", v69, v68, v_u_3.Machine.RequiredMatchingPets)
+                    elseif v81 then
+                        v83 = string.format("Add %s", v81)
+                    else
+                        v83 = v_u_3.Machine.ObjectText
+                    end
+                    v82.ObjectText = v83
+                    if v68 > 0 and (typeof(v69) == "string" and v69 ~= "") then
+                        v_u_50(v_u_51, v_u_53, v69, false)
+                    else
+                        if v_u_8 then
+                            v_u_8:Destroy()
+                            v_u_8 = nil
+                        end
+                        v_u_7 = nil
+                    end
+                end
+                task.wait(0.25)
+            end
+            if v_u_8 then
+                v_u_8:Destroy()
+                v_u_8 = nil
+            end
+            v_u_7 = nil
+        end)
+    end
+end
+return v4

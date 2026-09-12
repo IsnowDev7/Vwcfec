@@ -1,0 +1,104 @@
+-- Script Path: game:GetService("CorePackages").Workspace.Packages._Workspace.VrCommon.VrCommon.Controllers.IndexController
+-- Took 0s to decompile.
+
+local v1 = script:FindFirstAncestor("VrCommon").Parent
+local v_u_2 = game:GetEngineFeature("OpenXrForWin32")
+local v_u_3 = require(v1.AppCommonLib).Create
+local v_u_4 = Enum.Material.Granite
+local v_u_5 = v_u_2 and Vector3.new(3.4, 3.4, 3.4) or Vector3.new(3.6, 3.6, 3.6)
+local v_u_6 = {}
+v_u_6.__index = v_u_6
+function v_u_6.new(p7) -- name: new
+    -- upvalues: (copy) v_u_6, (copy) v_u_3, (copy) v_u_4, (copy) v_u_5
+    local v8 = v_u_6
+    local v9 = setmetatable({}, v8)
+    v9.userCFrame = p7
+    v9.model = v_u_3("Model")({
+        ["Name"] = "IndexController",
+        ["Archivable"] = false
+    })
+    v9.origin = v_u_3("Part")({
+        ["Parent"] = nil,
+        ["Name"] = "Origin",
+        ["Anchored"] = true,
+        ["Transparency"] = 1,
+        ["Size"] = Vector3.new(0.05, 0.05, 0.05),
+        ["CanCollide"] = false,
+        ["CanQuery"] = false,
+        ["CanTouch"] = false,
+        ["Parent"] = v9.model
+    })
+    v9.parts = {}
+    local v10 = v_u_3("Part")({
+        ["Parent"] = nil,
+        ["Name"] = "body",
+        ["Anchored"] = true,
+        ["Material"] = nil,
+        ["Size"] = Vector3.new(0.05, 0.05, 0.05),
+        ["Transparency"] = 0.25,
+        ["CFrame"] = nil,
+        ["CanCollide"] = false,
+        ["CanQuery"] = false,
+        ["CanTouch"] = false,
+        ["Parent"] = v9.model,
+        ["Material"] = v_u_4,
+        ["CFrame"] = v9.origin.CFrame
+    })
+    v9.mesh = v_u_3("SpecialMesh")({
+        ["Parent"] = nil,
+        ["Name"] = "Mesh",
+        ["MeshId"] = nil,
+        ["TextureId"] = nil,
+        ["Scale"] = nil,
+        ["Parent"] = v10,
+        ["MeshId"] = p7 == Enum.UserCFrame.LeftHand and "rbxassetid://9605099531" or "rbxassetid://9605114549",
+        ["TextureId"] = p7 == Enum.UserCFrame.LeftHand and "rbxassetid://9605099774" or "rbxassetid://9605114771",
+        ["Scale"] = v_u_5
+    })
+    v_u_3("Weld")({
+        ["Parent"] = nil,
+        ["Name"] = "Weld",
+        ["Part0"] = nil,
+        ["Part1"] = nil,
+        ["Parent"] = v10,
+        ["Part0"] = v9.origin,
+        ["Part1"] = v10
+    })
+    v9.parts.body = v10
+    v9.model.PrimaryPart = v9.origin
+    return v9
+end
+function v_u_6.setCFrame(p11, p12) -- name: setCFrame
+    -- upvalues: (copy) v_u_2
+    if v_u_2 then
+        if p11.userCFrame == Enum.UserCFrame.RightHand then
+            p11.model:SetPrimaryPartCFrame(p12 * CFrame.Angles(0.6981317007977318, 3.141592653589793, 0) * CFrame.new(-0.1, 0.08, -0.01))
+        else
+            p11.model:SetPrimaryPartCFrame(p12 * CFrame.Angles(0.6981317007977318, 3.141592653589793, 0) * CFrame.new(0.1, 0.08, -0.01))
+        end
+    elseif p11.userCFrame == Enum.UserCFrame.RightHand then
+        p11.model:SetPrimaryPartCFrame(p12 * CFrame.Angles(0.3490658503988659, 3.141592653589793, 0) * CFrame.new(-0.1, -0.03, -0.4))
+    else
+        p11.model:SetPrimaryPartCFrame(p12 * CFrame.Angles(0.3490658503988659, 3.141592653589793, 0) * CFrame.new(0.1, -0.03, -0.4))
+    end
+end
+function v_u_6.setCFrameAndScale(p13, p14, p15) -- name: setCFrameAndScale
+    -- upvalues: (copy) v_u_2, (copy) v_u_5
+    local v16 = p13.userCFrame == Enum.UserCFrame.RightHand and 1 or -1
+    if v_u_2 then
+        p13.model:SetPrimaryPartCFrame(p14 * CFrame.Angles(0.6981317007977318, 3.141592653589793, 0) * CFrame.new(-0.1 * p15 * v16, 0.08 * p15, -0.01 * p15))
+    else
+        p13.model:SetPrimaryPartCFrame(p14 * CFrame.Angles(0.3490658503988659, 3.141592653589793, 0) * CFrame.new(-0.1 * p15 * v16, -0.03 * p15, -0.4 * p15))
+    end
+    p13.mesh.Scale = v_u_5 * p15
+end
+function v_u_6.onButtonInputChanged(_, _, _) -- name: onButtonInputChanged end
+function v_u_6.onInputBegan(p17, p18) -- name: onInputBegan
+    p17:onButtonInputChanged(p18, true)
+end
+function v_u_6.onInputChanged(_, _) -- name: onInputChanged end
+function v_u_6.onInputEnded(p19, p20) -- name: onInputEnded
+    p19:onButtonInputChanged(p20, false)
+end
+function v_u_6.onTouchpadModeChanged(_, _, _) -- name: onTouchpadModeChanged end
+return v_u_6

@@ -1,0 +1,870 @@
+-- Script Path: game:GetService("ReplicatedStorage").ClientModules.Controllers.Eggs.PetInventoryController
+-- Took 0.09s to decompile.
+
+local v1 = game:GetService("Players")
+local v_u_2 = game:GetService("MarketplaceService")
+local v_u_3 = game:GetService("ReplicatedStorage")
+local v_u_4 = game:GetService("RunService")
+local v_u_5 = require(v_u_3:WaitForChild("ClientModules"):WaitForChild("Shared"):WaitForChild("SuffixAbr"))
+local v_u_6 = require(v_u_3:WaitForChild("Settings"):WaitForChild("Eggs"))
+local v_u_7 = require(v_u_3:WaitForChild("Settings"):WaitForChild("Animals"))
+local v_u_8 = require(v_u_3:WaitForChild("Settings"):WaitForChild("Mutations"))
+local v9 = {}
+local v_u_10 = v1.LocalPlayer
+local v_u_11 = false
+local v_u_12 = setmetatable({}, {
+    ["__mode"] = "k"
+})
+local function v_u_18(p13, p14) -- name: findVisualAsset
+    -- upvalues: (copy) v_u_3
+    local v15 = v_u_3:WaitForChild("Assets"):WaitForChild(p13)
+    local v16 = v15:FindFirstChild(p14)
+    if v16 and (v16:IsA("Model") or (v16:IsA("BasePart") or v16:IsA("Tool"))) then
+        return v16
+    end
+    for _, v17 in v15:GetDescendants() do
+        if v17.Name == p14 and (v17:IsA("Model") or (v17:IsA("BasePart") or v17:IsA("Tool"))) then
+            return v17
+        end
+    end
+    return nil
+end
+local function v_u_21(p19) -- name: clearViewport
+    for _, v20 in p19:GetChildren() do
+        if v20:IsA("WorldModel") or v20:IsA("Camera") then
+            v20:Destroy()
+        end
+    end
+end
+local function v_u_25(p22) -- name: getVisualBounds
+    if p22:IsA("Model") then
+        return p22:GetBoundingBox()
+    end
+    if p22:IsA("BasePart") then
+        return p22.CFrame, p22.Size
+    end
+    local v23 = p22:FindFirstChild("Handle") or p22:FindFirstChildWhichIsA("BasePart", true)
+    local v24 = p22:GetFullName() .. " needs a BasePart for its viewport"
+    assert(v23, v24)
+    return v23.CFrame, v23.Size
+end
+local function v_u_48(p26, p27, p28, p29, p30) -- name: renderVisual
+    -- upvalues: (copy) v_u_21, (copy) v_u_18, (copy) v_u_25
+    v_u_21(p26)
+    local v31 = v_u_18(p27, p28)
+    if not v31 and p29 then
+        v31 = v_u_18(p29, p28)
+    end
+    if v31 then
+        local v32 = Instance.new("WorldModel")
+        v32.Parent = p26
+        local v33 = v31:Clone()
+        for _, v34 in v33:GetDescendants() do
+            if v34:IsA("Script") or v34:IsA("LocalScript") then
+                v34:Destroy()
+            elseif v34:IsA("BasePart") then
+                v34.Anchored = true
+                v34.CanCollide = false
+            end
+        end
+        if v33:IsA("BasePart") then
+            v33.Anchored = true
+            v33.CanCollide = false
+        end
+        v33.Parent = v32
+        local v35 = CFrame.Angles(0, math.rad(p30 or 0), 0)
+        if v33:IsA("Model") then
+            v33:PivotTo(v33:GetPivot() * v35)
+        elseif v33:IsA("BasePart") then
+            v33.CFrame = v33.CFrame * v35
+        end
+        local v36, v37 = v_u_25(v33)
+        local v38 = v37.X
+        local v39 = v37.Y
+        local v40 = v37.Z
+        local v41 = math.max(v38, v39, v40, 1)
+        local v42 = Instance.new("Camera")
+        v42.FieldOfView = 35
+        local v43 = CFrame.lookAt
+        local v44 = v36.Position
+        local v45 = v41 * 0.15
+        local v46 = v37.Y * 0.08
+        local v47 = v41 * 2.1
+        v42.CFrame = v43(v44 + Vector3.new(v45, v46, v47), v36.Position)
+        v42.Parent = p26
+        p26.CurrentCamera = v42
+        p26.Ambient = Color3.new(1, 1, 1)
+        p26.LightColor = Color3.new(1, 1, 1)
+    else
+        warn((("[PetInventoryController] ReplicatedStorage.Assets.%*.%* is missing"):format(p27, p28)))
+    end
+end
+local function v_u_51(p49) -- name: getPivot
+    if p49:IsA("Model") then
+        return p49:GetPivot()
+    end
+    if p49:IsA("BasePart") then
+        return p49.CFrame
+    end
+    local v50 = p49:FindFirstChild("Handle") or p49:FindFirstChildWhichIsA("BasePart", true)
+    return v50 and v50.CFrame or nil
+end
+local function v_u_55(p52, p53) -- name: setPivot
+    if p52:IsA("Model") then
+        p52:PivotTo(p53)
+        return
+    elseif p52:IsA("BasePart") then
+        p52.CFrame = p53
+    else
+        local v54 = p52:FindFirstChild("Handle") or p52:FindFirstChildWhichIsA("BasePart", true)
+        if v54 then
+            v54.CFrame = p53
+        end
+    end
+end
+local function v_u_70(p_u_56) -- name: animateReadyEgg
+    -- upvalues: (copy) v_u_12, (copy) v_u_10, (copy) v_u_51, (copy) v_u_55, (copy) v_u_4
+    if v_u_12[p_u_56] or (p_u_56:GetAttribute("HatchReady") ~= true or tonumber(p_u_56:GetAttribute("OwnerUserId")) ~= v_u_10.UserId) then
+        return
+    else
+        local v_u_57 = v_u_51(p_u_56)
+        if v_u_57 then
+            v_u_12[p_u_56] = true
+            task.spawn(function()
+                -- upvalues: (copy) p_u_56, (ref) v_u_12, (ref) v_u_55, (copy) v_u_57, (ref) v_u_4
+                if p_u_56.Parent then
+                    local v58 = Instance.new("Highlight")
+                    v58.Name = "ReadyPulse"
+                    local v59
+                    if p_u_56:IsA("Tool") then
+                        v59 = p_u_56:FindFirstChild("Handle") or p_u_56:FindFirstChildWhichIsA("BasePart", true)
+                    else
+                        v59 = p_u_56
+                    end
+                    v58.Adornee = v59
+                    v58.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    v58.FillColor = Color3.new(1, 1, 1)
+                    v58.OutlineColor = Color3.new(1, 1, 1)
+                    v58.FillTransparency = 1
+                    v58.OutlineTransparency = 1
+                    v58.Parent = p_u_56
+                    local v60 = os.clock()
+                    while p_u_56.Parent and os.clock() - v60 < 0.9 do
+                        local v61 = (os.clock() - v60) / 0.9
+                        local v62 = math.clamp(v61, 0, 1)
+                        local v63 = v62 * 3.141592653589793
+                        local v64 = math.sin(v63)
+                        v58.FillTransparency = 1 - v64 * 0.72
+                        v58.OutlineTransparency = 1 - v64 * 0.9
+                        local v65 = v_u_55
+                        local v66 = p_u_56
+                        local v67 = v_u_57 * CFrame.new(0, v64 * 0.8, 0)
+                        local v68 = CFrame.Angles
+                        local v69 = v62 * 3.141592653589793 * 4
+                        v65(v66, v67 * v68(0, 0, math.sin(v69) * 0.08 * v64))
+                        v_u_4.RenderStepped:Wait()
+                    end
+                    if p_u_56.Parent then
+                        v_u_55(p_u_56, v_u_57)
+                    end
+                    v58:Destroy()
+                else
+                    v_u_12[p_u_56] = nil
+                end
+            end)
+        end
+    end
+end
+local function v_u_73(p_u_71) -- name: trackPlacedEgg
+    -- upvalues: (copy) v_u_70
+    if (p_u_71:IsA("Model") or (p_u_71:IsA("BasePart") or p_u_71:IsA("Tool"))) and typeof(p_u_71:GetAttribute("EggId")) == "string" then
+        if p_u_71:GetAttribute("HatchReady") == true then
+            task.delay(0.15, function()
+                -- upvalues: (copy) p_u_71, (ref) v_u_70
+                if p_u_71.Parent and p_u_71:GetAttribute("HatchReady") == true then
+                    v_u_70(p_u_71)
+                end
+            end)
+        else
+            p_u_71:GetAttributeChangedSignal("HatchReady"):Connect(function()
+                -- upvalues: (copy) p_u_71, (ref) v_u_70
+                local v_u_72 = p_u_71
+                task.delay(0.15, function()
+                    -- upvalues: (copy) v_u_72, (ref) v_u_70
+                    if v_u_72.Parent and v_u_72:GetAttribute("HatchReady") == true then
+                        v_u_70(v_u_72)
+                    end
+                end)
+            end)
+        end
+    else
+        return
+    end
+end
+function v9.Init() -- name: Init
+    -- upvalues: (ref) v_u_11, (copy) v_u_10, (copy) v_u_3, (copy) v_u_7, (copy) v_u_2, (copy) v_u_8, (copy) v_u_5, (copy) v_u_48, (copy) v_u_6, (copy) v_u_73
+    if not v_u_11 then
+        v_u_11 = true
+        local v74 = v_u_10:WaitForChild("PlayerGui"):WaitForChild("UI")
+        local v_u_75 = v74:WaitForChild("HUD"):WaitForChild("LeftButtons"):WaitForChild("Eggs"):WaitForChild("Amount")
+        local v_u_76 = v_u_75:WaitForChild("TextLabel")
+        local v77 = v74:WaitForChild("Pages"):WaitForChild("Pets"):WaitForChild("Main")
+        local v_u_78 = v77:WaitForChild("EquipBest")
+        if not v_u_78:IsA("GuiButton") then
+            v_u_78 = v_u_78:FindFirstChild("Detector", true)
+            if not (v_u_78 and v_u_78:IsA("GuiButton")) then
+                v_u_78 = nil
+            end
+        end
+        local v79 = v74.Pages:WaitForChild("Eggs"):WaitForChild("Main")
+        local v80 = v79:FindFirstChild("GrowAll", true) or v79:FindFirstChild("Grow All", true)
+        local v81
+        if v80 then
+            v81 = v80:IsA("GuiObject")
+        else
+            v81 = v80
+        end
+        local v82 = v79:GetFullName() .. ".GrowAll must be a GuiObject"
+        assert(v81, v82)
+        local v_u_83
+        if v80:IsA("GuiButton") then
+            v_u_83 = v80
+        else
+            v_u_83 = v80:FindFirstChild("Detector", true)
+            if not (v_u_83 and v_u_83:IsA("GuiButton")) then
+                v_u_83 = nil
+            end
+        end
+        local v84 = v80:GetFullName() .. " needs a GuiButton or Detector"
+        assert(v_u_83, v84)
+        local v_u_85 = v_u_10:WaitForChild("GrowAllEggsProductId", 30)
+        local v86
+        if v_u_85 then
+            v86 = v_u_85:IsA("IntValue")
+        else
+            v86 = v_u_85
+        end
+        assert(v86, "Player.GrowAllEggsProductId must be an IntValue")
+        local v_u_87 = v77:WaitForChild("ScrollingFrame")
+        local v_u_88 = v_u_87:WaitForChild("UIListLayout")
+        local v_u_89 = v79:WaitForChild("ScrollingFrame")
+        local v_u_90 = v_u_89:FindFirstChildWhichIsA("UIListLayout") or v_u_89:FindFirstChildWhichIsA("UIGridLayout")
+        local v91 = v77:WaitForChild("Title")
+        local v_u_92 = v91:WaitForChild("Active1")
+        local v_u_93 = v91:WaitForChild("Active2")
+        local v94 = v_u_3:WaitForChild("Assets"):WaitForChild("UIObjects")
+        local v_u_95 = v94:WaitForChild("Pet_Template")
+        local v_u_96 = v94:WaitForChild("Egg_Template")
+        local v_u_97 = v_u_87:WaitForChild("+1Equip"):WaitForChild("Equip")
+        local v_u_98 = v_u_97:WaitForChild("Title")
+        if not v_u_97:IsA("GuiButton") then
+            v_u_97 = v_u_97:FindFirstChild("Detector", true)
+            if not (v_u_97 and v_u_97:IsA("GuiButton")) then
+                v_u_97 = nil
+            end
+        end
+        local v_u_99 = v_u_3:WaitForChild("Remotes"):WaitForChild("PetInventory")
+        local v100 = v_u_99:IsA("RemoteEvent")
+        assert(v100, "ReplicatedStorage.Remotes.PetInventory must be a RemoteEvent")
+        local v_u_101 = v_u_10:WaitForChild("Plot", 30)
+        v_u_101 = v_u_101
+        local v102
+        if v_u_101 then
+            v102 = v_u_101:IsA("ObjectValue")
+        else
+            v102 = v_u_101
+        end
+        assert(v102, "Player.Plot must be an ObjectValue")
+        local v_u_103 = nil
+        local v_u_104 = 0
+        local function v110() -- name: connectWorldPenButton
+            -- upvalues: (ref) v_u_103, (copy) v_u_101, (ref) v_u_104, (copy) v_u_99
+            if v_u_103 then
+                v_u_103:Disconnect()
+                v_u_103 = nil
+            end
+            local v105 = v_u_101.Value
+            if v105 then
+                local v106 = v105:WaitForChild("Upgrade", 10)
+                if v106 then
+                    v106 = v106:WaitForChild("SurfaceGui", 10)
+                end
+                if v106 then
+                    v106 = v106:WaitForChild("TextButton", 10)
+                end
+                local v107
+                if v106 then
+                    v107 = v106:IsA("GuiButton")
+                else
+                    v107 = v106
+                end
+                local v108 = v105:GetFullName() .. ".Upgrade.SurfaceGui.TextButton must be a GuiButton"
+                assert(v107, v108)
+                v_u_103 = v106.Activated:Connect(function()
+                    -- upvalues: (ref) v_u_104, (ref) v_u_99
+                    local v109 = os.clock()
+                    if v109 >= v_u_104 then
+                        v_u_104 = v109 + 0.25
+                        v_u_99:FireServer("BuyEquipSlot")
+                    end
+                end)
+            end
+        end
+        v_u_101:GetPropertyChangedSignal("Value"):Connect(v110)
+        task.defer(v110)
+        local v111 = v77:GetFullName() .. ".EquipBest needs to be a GuiButton or contain a Detector"
+        assert(v_u_78, v111)
+        local v112 = v_u_88:IsA("UIListLayout")
+        local v113 = v_u_87:GetFullName() .. ".UIListLayout must be a UIListLayout"
+        assert(v112, v113)
+        local v114
+        if v_u_90 then
+            v114 = v_u_90:IsA("UIListLayout") or v_u_90:IsA("UIGridLayout")
+        else
+            v114 = v_u_90
+        end
+        local v115 = v_u_89:GetFullName() .. " needs a UIListLayout or UIGridLayout"
+        assert(v114, v115)
+        local v116 = v_u_95:IsA("GuiObject")
+        assert(v116, "Assets.UIObjects.Pet_Template must be a GuiObject")
+        local v117 = v_u_96:IsA("GuiObject")
+        assert(v117, "Assets.UIObjects.Egg_Template must be a GuiObject")
+        local v118 = not v_u_98 or v_u_98:IsA("TextLabel") or (v_u_98:IsA("TextButton") or v_u_98:IsA("TextBox"))
+        assert(v118, "UI.Pages.Pets.Main.ScrollingFrame.+1Equip.Equip.Title must be a text object")
+        assert(v_u_97, "UI.Pages.Pets.Main.ScrollingFrame.+1Equip.Equip needs a GuiButton or Detector")
+        local v119 = not v_u_92 or v_u_92:IsA("TextLabel") or (v_u_92:IsA("TextButton") or v_u_92:IsA("TextBox"))
+        local v120 = v91:GetFullName() .. ".Active1 must be a text object"
+        assert(v119, v120)
+        local v121 = not v_u_93 or v_u_93:IsA("TextLabel") or (v_u_93:IsA("TextButton") or v_u_93:IsA("TextBox"))
+        local v122 = v91:GetFullName() .. ".Active2 must be a text object"
+        assert(v121, v122)
+        local v123 = v_u_75:IsA("GuiObject")
+        assert(v123, "UI.HUD.LeftButtons.Eggs.Amount must be a GuiObject")
+        local v124 = not v_u_76 or v_u_76:IsA("TextLabel") or (v_u_76:IsA("TextButton") or v_u_76:IsA("TextBox"))
+        assert(v124, "UI.HUD.LeftButtons.Eggs.Amount.TextLabel must be a text object")
+        v_u_88.SortOrder = Enum.SortOrder.LayoutOrder
+        local function v_u_134(p125, p126) -- name: lockLayoutItemHeight
+            local v127 = p125.Size
+            local v128 = p126.AbsoluteWindowSize.Y
+            local v129 = p126.AbsoluteSize.Y
+            local v130 = math.max(v128, v129, 1)
+            local v131 = v127.Y.Scale * v130 + v127.Y.Offset
+            local v132 = math.round(v131)
+            local v133 = math.max(v132, 0)
+            p125.AutomaticSize = Enum.AutomaticSize.None
+            p125.Size = UDim2.new(v127.X.Scale, v127.X.Offset, 0, v133)
+        end
+        local function v162(p135, p136) -- name: lockLayoutMeasurements
+            local v137 = p136.AbsoluteWindowSize
+            local v138 = v137.X
+            local v139 = p136.AbsoluteSize.X
+            local v140 = math.max(v138, v139, 1)
+            local v141 = v137.Y
+            local v142 = p136.AbsoluteSize.Y
+            local v143 = math.max(v141, v142, 1)
+            if p135:IsA("UIListLayout") then
+                local v144 = p135.Padding
+                if p135.FillDirection == Enum.FillDirection.Vertical then
+                    v140 = v143
+                end
+                local v145 = UDim.new
+                local v146 = v144.Scale * v140 + v144.Offset
+                local v147 = math.round(v146)
+                p135.Padding = v145(0, (math.max(v147, 0)))
+                p135.VerticalFlex = Enum.UIFlexAlignment.None
+            elseif p135:IsA("UIGridLayout") then
+                local v148 = p135.CellSize
+                local v149 = p135.CellPadding
+                local v150 = UDim2.fromOffset
+                local v151 = v148.X.Scale * v140 + v148.X.Offset
+                local v152 = math.round(v151)
+                local v153 = math.max(v152, 0)
+                local v154 = v148.Y.Scale * v143 + v148.Y.Offset
+                local v155 = math.round(v154)
+                p135.CellSize = v150(v153, (math.max(v155, 0)))
+                local v156 = UDim2.fromOffset
+                local v157 = v149.X.Scale * v140 + v149.X.Offset
+                local v158 = math.round(v157)
+                local v159 = math.max(v158, 0)
+                local v160 = v149.Y.Scale * v143 + v149.Y.Offset
+                local v161 = math.round(v160)
+                p135.CellPadding = v156(v159, (math.max(v161, 0)))
+            end
+        end
+        for _, v163 in v_u_87:GetChildren() do
+            if v163:IsA("GuiObject") then
+                v_u_134(v163, v_u_87)
+            end
+        end
+        for _, v164 in v_u_89:GetChildren() do
+            if v164:IsA("GuiObject") then
+                v_u_134(v164, v_u_89)
+            end
+        end
+        v162(v_u_88, v_u_87)
+        v162(v_u_90, v_u_89)
+        v_u_87.AutomaticCanvasSize = Enum.AutomaticSize.None
+        local v_u_165 = false
+        local function v170() -- name: updateCanvas
+            -- upvalues: (ref) v_u_165, (copy) v_u_87, (copy) v_u_88
+            if not v_u_165 then
+                v_u_165 = true
+                task.defer(function()
+                    -- upvalues: (ref) v_u_165, (ref) v_u_87, (ref) v_u_88
+                    v_u_165 = false
+                    if v_u_87.Parent and v_u_88.Parent then
+                        local v166 = v_u_88.AbsoluteContentSize.Y
+                        local v167 = v_u_87:FindFirstChildWhichIsA("UIPadding")
+                        if v167 then
+                            local v168 = v_u_87.AbsoluteWindowSize.Y
+                            v166 = v166 + (v167.PaddingTop.Offset + v167.PaddingTop.Scale * v168 + v167.PaddingBottom.Offset + v167.PaddingBottom.Scale * v168)
+                        end
+                        local v169 = math.ceil(v166)
+                        v_u_87.CanvasSize = UDim2.new(0, 0, 0, v169)
+                    end
+                end)
+            end
+        end
+        v_u_88:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(v170)
+        if not v_u_165 then
+            v_u_165 = true
+            task.defer(function()
+                -- upvalues: (ref) v_u_165, (copy) v_u_87, (copy) v_u_88
+                v_u_165 = false
+                if v_u_87.Parent and v_u_88.Parent then
+                    local v171 = v_u_88.AbsoluteContentSize.Y
+                    local v172 = v_u_87:FindFirstChildWhichIsA("UIPadding")
+                    if v172 then
+                        local v173 = v_u_87.AbsoluteWindowSize.Y
+                        v171 = v171 + (v172.PaddingTop.Offset + v172.PaddingTop.Scale * v173 + v172.PaddingBottom.Offset + v172.PaddingBottom.Scale * v173)
+                    end
+                    local v174 = math.ceil(v171)
+                    v_u_87.CanvasSize = UDim2.new(0, 0, 0, v174)
+                end
+            end)
+        end
+        local v_u_175 = v170
+        v_u_89.AutomaticCanvasSize = Enum.AutomaticSize.None
+        local v_u_176 = false
+        local function v181() -- name: updateCanvas
+            -- upvalues: (ref) v_u_176, (copy) v_u_89, (copy) v_u_90
+            if not v_u_176 then
+                v_u_176 = true
+                task.defer(function()
+                    -- upvalues: (ref) v_u_176, (ref) v_u_89, (ref) v_u_90
+                    v_u_176 = false
+                    if v_u_89.Parent and v_u_90.Parent then
+                        local v177 = v_u_90.AbsoluteContentSize.Y
+                        local v178 = v_u_89:FindFirstChildWhichIsA("UIPadding")
+                        if v178 then
+                            local v179 = v_u_89.AbsoluteWindowSize.Y
+                            v177 = v177 + (v178.PaddingTop.Offset + v178.PaddingTop.Scale * v179 + v178.PaddingBottom.Offset + v178.PaddingBottom.Scale * v179)
+                        end
+                        local v180 = math.ceil(v177)
+                        v_u_89.CanvasSize = UDim2.new(0, 0, 0, v180)
+                    end
+                end)
+            end
+        end
+        v_u_90:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(v181)
+        if not v_u_176 then
+            v_u_176 = true
+            task.defer(function()
+                -- upvalues: (ref) v_u_176, (copy) v_u_89, (copy) v_u_90
+                v_u_176 = false
+                if v_u_89.Parent and v_u_90.Parent then
+                    local v182 = v_u_90.AbsoluteContentSize.Y
+                    local v183 = v_u_89:FindFirstChildWhichIsA("UIPadding")
+                    if v183 then
+                        local v184 = v_u_89.AbsoluteWindowSize.Y
+                        v182 = v182 + (v183.PaddingTop.Offset + v183.PaddingTop.Scale * v184 + v183.PaddingBottom.Offset + v183.PaddingBottom.Scale * v184)
+                    end
+                    local v185 = math.ceil(v182)
+                    v_u_89.CanvasSize = UDim2.new(0, 0, 0, v185)
+                end
+            end)
+        end
+        local v_u_186 = v181
+        local v_u_187 = {
+            ["+1Equip"] = true,
+            ["UIListLayout"] = true,
+            ["Spacer_bottom"] = true,
+            ["Spacer_top"] = true
+        }
+        local v_u_188 = 0
+        local v_u_189 = 0
+        local v190 = v_u_7.Inventory.EquipBestCooldownSeconds
+        local v191 = tonumber(v190) or 5
+        local v_u_192 = math.max(v191, 0)
+        v_u_78.MouseButton1Down:Connect(function()
+            -- upvalues: (ref) v_u_189, (copy) v_u_192, (copy) v_u_78, (copy) v_u_99
+            local v193 = os.clock()
+            if v193 >= v_u_189 then
+                v_u_189 = v193 + v_u_192
+                v_u_78.Active = false
+                v_u_78.AutoButtonColor = false
+                v_u_99:FireServer("EquipBest")
+                task.delay(v_u_192, function()
+                    -- upvalues: (ref) v_u_78
+                    if v_u_78.Parent then
+                        v_u_78.Active = true
+                        v_u_78.AutoButtonColor = true
+                    end
+                end)
+            end
+        end)
+        v_u_83.MouseButton1Down:Connect(function()
+            -- upvalues: (copy) v_u_85, (ref) v_u_188, (ref) v_u_2, (ref) v_u_10
+            local v194 = v_u_85.Value
+            local v195 = tonumber(v194) or 0
+            local v196 = math.floor(v195)
+            if v_u_188 > 0 and v196 > 0 then
+                v_u_2:PromptProductPurchase(v_u_10, v196)
+            end
+        end)
+        local v_u_197 = {}
+        local function v_u_200(p198) -- name: clearCards
+            -- upvalues: (copy) v_u_187
+            for _, v199 in p198:GetChildren() do
+                if not v_u_187[v199.Name] then
+                    v199:Destroy()
+                end
+            end
+        end
+        local function v_u_237(p_u_201, p202) -- name: addPetCard
+            -- upvalues: (copy) v_u_95, (copy) v_u_134, (copy) v_u_87, (ref) v_u_8, (ref) v_u_5, (ref) v_u_48, (copy) v_u_99
+            local v203 = p_u_201.Id
+            local v204 = typeof(v203) == "string"
+            assert(v204, "Pet inventory entry is missing Id")
+            local v205 = p_u_201.Name
+            local v206 = typeof(v205) == "string"
+            assert(v206, "Pet inventory entry is missing Name")
+            local v207 = v_u_95:Clone()
+            v207.Name = p_u_201.Id
+            v207.LayoutOrder = p202
+            v207.Visible = true
+            v_u_134(v207, v_u_87)
+            v207.Parent = v_u_87
+            local v208 = v207:WaitForChild("Viewport")
+            local v209 = v207:WaitForChild("Info")
+            local v210 = v209:WaitForChild("CPS")
+            local v211 = v209:WaitForChild("PetName")
+            local v212 = v207:WaitForChild("Equip")
+            local v213 = v207:WaitForChild("UnEquip")
+            local v214
+            if v212:IsA("GuiButton") then
+                v214 = v212
+            else
+                v214 = v212:FindFirstChild("Detector", true)
+                if not (v214 and v214:IsA("GuiButton")) then
+                    v214 = nil
+                end
+            end
+            local v215
+            if v213:IsA("GuiButton") then
+                v215 = v213
+            else
+                v215 = v213:FindFirstChild("Detector", true)
+                if not (v215 and v215:IsA("GuiButton")) then
+                    v215 = nil
+                end
+            end
+            local v216 = v208:IsA("ViewportFrame")
+            local v217 = v207:GetFullName() .. ".Viewport must be a ViewportFrame"
+            assert(v216, v217)
+            local v218 = not v210 or v210:IsA("TextLabel") or (v210:IsA("TextButton") or v210:IsA("TextBox"))
+            local v219 = v209:GetFullName() .. ".CPS must be a text object"
+            assert(v218, v219)
+            local v220 = not v211 or v211:IsA("TextLabel") or (v211:IsA("TextButton") or v211:IsA("TextBox"))
+            local v221 = v209:GetFullName() .. ".PetName must be a text object"
+            assert(v220, v221)
+            local v222 = v207:GetFullName() .. ".Equip needs a GuiButton or Detector"
+            assert(v214, v222)
+            local v223 = v207:GetFullName() .. ".UnEquip needs a GuiButton or Detector"
+            assert(v215, v223)
+            local v_u_224 = p_u_201.LockedInMutationMachine == true
+            local v225 = v_u_8.Normalize(p_u_201.Mutations, p_u_201.Mutation, p_u_201.EventMutation)
+            local v226 = v_u_8.GetDisplayName(p_u_201.Name, v225)
+            if v_u_224 then
+                v226 = v226 .. " (Machine)"
+            end
+            v211.Text = v226
+            local v227
+            if p_u_201.MutationMachineStatus == "Ready" then
+                v227 = "Ready to Claim!"
+            elseif p_u_201.MutationMachineStatus == "Crafting" then
+                v227 = "Crafting Gold..."
+            elseif v_u_224 then
+                v227 = "Stored in Machine"
+            else
+                local v228 = v_u_5.Format
+                local v229 = p_u_201.CashPerSecond
+                v227 = "$" .. v228(tonumber(v229) or 0) .. "/s"
+            end
+            v210.Text = v227
+            local v230 = not v_u_224
+            if v230 then
+                v230 = p_u_201.Equipped ~= true
+            end
+            v212.Visible = v230
+            local v231 = not v_u_224
+            if v231 then
+                v231 = p_u_201.Equipped == true
+            end
+            v213.Visible = v231
+            v214.Active = not v_u_224
+            v214.AutoButtonColor = not v_u_224
+            v215.Active = not v_u_224
+            v215.AutoButtonColor = not v_u_224
+            if v_u_8.UsesGoldenModel(v225) then
+                v_u_48(v208, "GoldenAnimals", p_u_201.Name, "Animals", 180)
+            else
+                v_u_48(v208, "Animals", p_u_201.Name, nil, 180)
+            end
+            local v232 = v209:FindFirstChild("Mutations")
+            local v233
+            if v232 then
+                v233 = v232:FindFirstChild("Badge")
+            else
+                v233 = v232
+            end
+            if v232 and v233 then
+                v232.Visible = #v225 > 0
+                for v234, v235 in v225 do
+                    local v236 = v233:Clone()
+                    v236.Name = v235
+                    v236.LayoutOrder = v234
+                    v236.Text = v_u_8.GetShortName(v235)
+                    v236.BackgroundColor3 = v_u_8.GetColor(v235)
+                    v236.Visible = true
+                    v236.Parent = v232
+                end
+            end
+            v214.MouseButton1Down:Connect(function()
+                -- upvalues: (copy) v_u_224, (ref) v_u_99, (copy) p_u_201
+                if not v_u_224 then
+                    v_u_99:FireServer("SetEquipped", p_u_201.Id, true)
+                end
+            end)
+            v215.MouseButton1Down:Connect(function()
+                -- upvalues: (copy) v_u_224, (ref) v_u_99, (copy) p_u_201
+                if not v_u_224 then
+                    v_u_99:FireServer("SetEquipped", p_u_201.Id, false)
+                end
+            end)
+        end
+        local function v_u_270(p_u_238, p239) -- name: addEggCard
+            -- upvalues: (copy) v_u_96, (copy) v_u_134, (copy) v_u_89, (ref) v_u_6, (ref) v_u_48, (copy) v_u_197, (copy) v_u_99
+            local v240 = p_u_238.Id
+            local v241 = typeof(v240) == "string"
+            assert(v241, "Egg inventory entry is missing Id")
+            local v242 = p_u_238.Name
+            local v243 = typeof(v242) == "string"
+            assert(v243, "Egg inventory entry is missing Name")
+            local v244 = v_u_96:Clone()
+            v244.Name = p_u_238.Id
+            v244.LayoutOrder = p239
+            v244.Visible = true
+            v_u_134(v244, v_u_89)
+            v244.Parent = v_u_89
+            local v245 = v244:WaitForChild("Viewport")
+            local v246 = v244:WaitForChild("Info")
+            local v247 = v246:WaitForChild("PetName")
+            local v248 = v246:WaitForChild("LoadingBar")
+            local v249 = v248:WaitForChild("Time")
+            local v250 = v248:WaitForChild("LoadingBar")
+            local v251 = v244:WaitForChild("Buy")
+            local v252 = v251:WaitForChild("Title")
+            local v253
+            if v251:IsA("GuiButton") then
+                v253 = v251
+            else
+                v253 = v251:FindFirstChild("Detector", true)
+                if not (v253 and v253:IsA("GuiButton")) then
+                    v253 = nil
+                end
+            end
+            local v254 = v245:IsA("ViewportFrame")
+            local v255 = v244:GetFullName() .. ".Viewport must be a ViewportFrame"
+            assert(v254, v255)
+            local v256 = not v247 or v247:IsA("TextLabel") or (v247:IsA("TextButton") or v247:IsA("TextBox"))
+            local v257 = v246:GetFullName() .. ".PetName must be a text object"
+            assert(v256, v257)
+            local v258 = not v249 or v249:IsA("TextLabel") or (v249:IsA("TextButton") or v249:IsA("TextBox"))
+            local v259 = v248:GetFullName() .. ".Time must be a text object"
+            assert(v258, v259)
+            local v260 = v250:IsA("GuiObject")
+            local v261 = v248:GetFullName() .. ".LoadingBar must be a GuiObject"
+            assert(v260, v261)
+            local v262 = not v252 or v252:IsA("TextLabel") or (v252:IsA("TextButton") or v252:IsA("TextBox"))
+            local v263 = v251:GetFullName() .. ".Title must be a text object"
+            assert(v262, v263)
+            local v264 = v244:GetFullName() .. ".Buy needs a GuiButton or Detector"
+            assert(v253, v264)
+            v247.Text = v_u_6.GetDisplayName(p_u_238.Name)
+            v_u_48(v245, "Eggs", p_u_238.Name, "Animals", 180)
+            local v265 = v_u_197
+            local v266 = p_u_238.Id
+            local v267 = {
+                ["Card"] = v244,
+                ["Fill"] = v250,
+                ["Time"] = v249,
+                ["BuyTitle"] = v252
+            }
+            local v268 = p_u_238.PlacedAt
+            v267.PlacedAt = tonumber(v268) or 0
+            local v269 = p_u_238.HatchAt
+            v267.HatchAt = tonumber(v269) or 0
+            v265[v266] = v267
+            v253.MouseButton1Down:Connect(function()
+                -- upvalues: (ref) v_u_99, (copy) p_u_238
+                v_u_99:FireServer("EggAction", p_u_238.Id)
+            end)
+        end
+        local v_u_271 = false
+        v_u_97.MouseButton1Down:Connect(function()
+            -- upvalues: (ref) v_u_271, (copy) v_u_99
+            if not v_u_271 then
+                v_u_99:FireServer("BuyEquipSlot")
+            end
+        end)
+        v_u_99.OnClientEvent:Connect(function(p272, p273, p274, p275, p276)
+            -- upvalues: (ref) v_u_188, (copy) v_u_83, (ref) v_u_271, (copy) v_u_98, (ref) v_u_5, (copy) v_u_97, (copy) v_u_92, (copy) v_u_93, (copy) v_u_200, (copy) v_u_87, (copy) v_u_89, (copy) v_u_197, (copy) v_u_270, (copy) v_u_237, (copy) v_u_175, (copy) v_u_186
+            if p272 == "Snapshot" and typeof(p273) == "table" then
+                local v277 = 0
+                v_u_188 = 0
+                for _, v278 in p273 do
+                    if v278.Kind == "Egg" or v278.Equipped ~= true then
+                        if v278.Kind == "Egg" then
+                            local v279 = v278.HatchAt
+                            if (tonumber(v279) or 0) > workspace:GetServerTimeNow() then
+                                v_u_188 = v_u_188 + 1
+                            end
+                        end
+                    else
+                        v277 = v277 + 1
+                    end
+                end
+                v_u_83.Active = v_u_188 > 0
+                v_u_83.AutoButtonColor = v_u_188 > 0
+                local v280 = tonumber(p274) or 7
+                local v281 = math.floor(v280)
+                local v282 = math.max(v281, 1)
+                local v283 = tonumber(p276) or v282
+                local v284 = math.floor(v283)
+                v_u_271 = math.max(v284, v282) <= v282 and true or typeof(p275) ~= "number"
+                v_u_98.Text = v_u_271 and "MAX" or "$" .. v_u_5.Format((math.max(p275, 0)))
+                v_u_97.Active = not v_u_271
+                v_u_97.AutoButtonColor = not v_u_271
+                local v285 = string.format("%d/%d Pets Active", v277, v282)
+                v_u_92.Text = v285
+                v_u_93.Text = v285
+                v_u_200(v_u_87)
+                v_u_200(v_u_89)
+                table.clear(v_u_197)
+                local v286 = {}
+                local v287 = {}
+                for _, v288 in p273 do
+                    if v288.Kind == "Egg" then
+                        table.insert(v287, v288)
+                    else
+                        table.insert(v286, v288)
+                    end
+                end
+                table.sort(v286, function(p289, p290)
+                    local v291 = p289.CashPerSecond
+                    local v292 = tonumber(v291) or 0
+                    local v293 = p290.CashPerSecond
+                    local v294 = tonumber(v293) or 0
+                    if v292 == v294 then
+                        if p289.Name == p290.Name then
+                            return p289.Id < p290.Id
+                        else
+                            return p289.Name < p290.Name
+                        end
+                    else
+                        return v294 < v292
+                    end
+                end)
+                local v295 = 0
+                local v296 = 0
+                for _, v297 in v287 do
+                    v295 = v295 + 1
+                    v_u_270(v297, v295)
+                end
+                for _, v298 in v286 do
+                    v296 = v296 + 1
+                    v_u_237(v298, v296)
+                end
+                v_u_175()
+                v_u_186()
+            end
+        end)
+        task.spawn(function()
+            -- upvalues: (copy) v_u_197, (ref) v_u_188, (copy) v_u_83, (copy) v_u_75, (copy) v_u_76
+            local v299 = -1
+            while true do
+                local v300 = workspace:GetServerTimeNow()
+                local v301 = 0
+                local v302 = 0
+                for v303, v304 in v_u_197 do
+                    if v304.Card.Parent then
+                        local v305 = v304.HatchAt - v304.PlacedAt
+                        local v306 = math.max(v305, 0.001)
+                        local v307 = (v300 - v304.PlacedAt) / v306
+                        local v308 = math.clamp(v307, 0, 1)
+                        local v309 = v304.HatchAt - v300
+                        local v310 = math.max(v309, 0)
+                        v304.Fill.Size = UDim2.new(v308, 0, 1, 0)
+                        if v310 > 0 then
+                            v301 = v301 + 1
+                            local v311 = v304.Time
+                            local v312 = math.ceil(v310)
+                            local v313 = math.max(v312, 0)
+                            local v314 = v313 / 60
+                            local v315 = math.floor(v314)
+                            local v316 = v313 % 60
+                            local v317
+                            if v315 > 0 then
+                                v317 = string.format("%d:%02d", v315, v316)
+                            else
+                                v317 = string.format("%ds", v316)
+                            end
+                            v311.Text = v317
+                            v304.BuyTitle.Text = "Skip"
+                        else
+                            v302 = v302 + 1
+                            v304.Time.Text = "Ready!"
+                            v304.BuyTitle.Text = "Claim!"
+                        end
+                    else
+                        v_u_197[v303] = nil
+                    end
+                end
+                v_u_188 = v301
+                v_u_83.Active = v_u_188 > 0
+                v_u_83.AutoButtonColor = v_u_188 > 0
+                if v302 == v299 then
+                    v302 = v299
+                else
+                    v_u_75.Visible = v302 > 0
+                    v_u_76.Text = tostring(v302)
+                end
+                task.wait(0.2)
+                v299 = v302
+            end
+        end)
+        workspace.DescendantAdded:Connect(v_u_73)
+        for _, v318 in workspace:GetDescendants() do
+            v_u_73(v318)
+        end
+        v_u_200(v_u_87)
+        v_u_200(v_u_89)
+        v_u_75.Visible = false
+        v_u_76.Text = "0"
+        v_u_92.Text = "0/7 Pets Active"
+        v_u_93.Text = "0/7 Pets Active"
+        v_u_99:FireServer("Get")
+    end
+end
+return v9

@@ -1,0 +1,59 @@
+-- Script Path: game:GetService("ReplicatedStorage").ClientModules.Controllers.Eggs.SellController
+-- Took 0.01s to decompile.
+
+local v_u_1 = game:GetService("ProximityPromptService")
+local v_u_2 = game:GetService("ReplicatedStorage")
+local v3 = {}
+local v_u_4 = false
+local v_u_5 = nil
+local v_u_6 = false
+function v3.Init(_) -- name: Init
+    -- upvalues: (ref) v_u_4, (ref) v_u_5, (copy) v_u_2, (copy) v_u_1, (ref) v_u_6
+    if not v_u_4 then
+        v_u_4 = true
+        v_u_5 = v_u_2:WaitForChild("Remotes"):WaitForChild("Sell", 10)
+        local v7 = v_u_5
+        if v7 then
+            v7 = v_u_5:IsA("RemoteEvent")
+        end
+        assert(v7, "ReplicatedStorage.Remotes.Sell must be a RemoteEvent")
+        v_u_1.PromptTriggered:Connect(function(p8)
+            -- upvalues: (ref) v_u_6, (ref) v_u_5
+            if not v_u_6 then
+                local v9
+                if p8.Name == "SellAnimalPrompt" then
+                    local v10 = p8:FindFirstAncestor("Detector")
+                    local v11
+                    if v10 then
+                        v11 = v10.Parent
+                    else
+                        v11 = v10
+                    end
+                    local v12
+                    if v11 then
+                        v12 = v11.Parent
+                    else
+                        v12 = v11
+                    end
+                    if v10 == nil or (v11 == nil or (v11.Name ~= "Sell" or v12 == nil)) then
+                        v9 = false
+                    else
+                        v9 = v12.Name == "Map"
+                    end
+                else
+                    v9 = false
+                end
+                if v9 then
+                    v_u_6 = true
+                    v_u_5:FireServer()
+                    task.delay(0.5, function()
+                        -- upvalues: (ref) v_u_6
+                        v_u_6 = false
+                    end)
+                    return
+                end
+            end
+        end)
+    end
+end
+return v3

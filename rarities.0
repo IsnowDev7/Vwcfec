@@ -1,0 +1,33 @@
+-- Script Path: game:GetService("ReplicatedStorage").Settings.Rarities
+-- Took 0s to decompile.
+
+local v_u_1 = {
+    ["List"] = {
+        "Common",
+        "Uncommon",
+        "Rare",
+        "Epic",
+        "Legendary",
+        "Mythic",
+        "Divine",
+        "Celestial",
+        "Eternal"
+    }
+}
+local v_u_2 = {}
+for v3, v4 in v_u_1.List do
+    v_u_2[v4] = v3
+end
+function v_u_1.Get(p5) -- name: Get
+    -- upvalues: (copy) v_u_1
+    return v_u_1.List[p5]
+end
+function v_u_1.GetIndex(p6) -- name: GetIndex
+    -- upvalues: (copy) v_u_2
+    return v_u_2[p6]
+end
+function v_u_1.IsValid(p7) -- name: IsValid
+    -- upvalues: (copy) v_u_2
+    return v_u_2[p7] ~= nil
+end
+return v_u_1

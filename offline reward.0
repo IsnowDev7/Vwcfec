@@ -1,0 +1,196 @@
+-- Script Path: game:GetService("ReplicatedStorage").ClientModules.Controllers.HUD.OfflineRewardController
+-- Took 0.02s to decompile.
+
+local v_u_1 = game:GetService("MarketplaceService")
+local v2 = game:GetService("Players")
+local v_u_3 = game:GetService("ReplicatedStorage")
+local v_u_4 = game:GetService("RunService")
+local v_u_5 = game:GetService("TweenService")
+local v_u_6 = require(v_u_3:WaitForChild("Settings"):WaitForChild("OfflineRewards"))
+local v_u_7 = require(v_u_3:WaitForChild("ClientModules"):WaitForChild("Shared"):WaitForChild("SuffixAbr"))
+local v_u_8 = require(v_u_3:WaitForChild("ClientModules"):WaitForChild("Controllers"):WaitForChild("UIController"))
+local v9 = {}
+local v_u_10 = v2.LocalPlayer
+local v_u_11 = false
+local v_u_12 = utf8.char(57346)
+function v9.Init() -- name: Init
+    -- upvalues: (ref) v_u_11, (copy) v_u_10, (copy) v_u_3, (copy) v_u_6, (copy) v_u_4, (copy) v_u_7, (copy) v_u_5, (copy) v_u_8, (copy) v_u_1, (copy) v_u_12
+    if not v_u_11 then
+        v_u_11 = true
+        local v_u_13 = v_u_10:WaitForChild("PlayerGui"):WaitForChild("UI"):WaitForChild("Pages"):WaitForChild("Offline")
+        local v14 = v_u_13:WaitForChild("Main")
+        local v15 = v14:WaitForChild("LoadingBar")
+        local v_u_16 = v15:WaitForChild("LoadingBar")
+        local v_u_17 = v15:WaitForChild("Money")
+        local v_u_18 = v15:WaitForChild("Cap")
+        local v19 = v14:WaitForChild("Claim")
+        if not v19:IsA("GuiButton") then
+            v19 = v19:FindFirstChild("Detector", true)
+            if not (v19 and (v19:IsA("GuiButton") and v19)) then
+                v19 = nil
+            end
+        end
+        local v_u_20 = v_u_3:WaitForChild("Remotes"):WaitForChild("OfflineRewards", 20)
+        local v21 = v_u_13:IsA("GuiObject")
+        assert(v21, "UI.Pages.Offline must be a GuiObject")
+        local v22 = v_u_13:FindFirstChild("Open")
+        if v22 then
+            v22 = v_u_13.Open:IsA("BoolValue")
+        end
+        assert(v22, "UI.Pages.Offline.Open must be a BoolValue")
+        local v23 = v_u_16:IsA("GuiObject")
+        assert(v23, "UI.Pages.Offline.Main.LoadingBar.LoadingBar must be a GuiObject")
+        local v24 = not v_u_17 or v_u_17:IsA("TextLabel") or (v_u_17:IsA("TextButton") or v_u_17:IsA("TextBox"))
+        assert(v24, "UI.Pages.Offline.Main.LoadingBar.Money must be a text object")
+        local v25 = not v_u_18 or v_u_18:IsA("TextLabel") or (v_u_18:IsA("TextButton") or v_u_18:IsA("TextBox"))
+        assert(v25, "UI.Pages.Offline.Main.LoadingBar.Cap must be a text object")
+        assert(v19, "UI.Pages.Offline.Main.Claim must be a GuiButton or contain a Detector")
+        v_u_20 = v_u_20
+        local v26
+        if v_u_20 then
+            v26 = v_u_20:IsA("RemoteEvent")
+        else
+            v26 = v_u_20
+        end
+        assert(v26, "ReplicatedStorage.Remotes.OfflineRewards must be a RemoteEvent")
+        v_u_16.Size = UDim2.fromScale(0, 1)
+        local v_u_27 = 0
+        local v_u_28 = nil
+        local v_u_29 = v_u_6.StudioTest
+        local v_u_30 = v_u_4:IsStudio()
+        if v_u_30 then
+            if typeof(v_u_29) == "table" then
+                v_u_30 = v_u_29.Enabled == true
+            else
+                v_u_30 = false
+            end
+        end
+        local v_u_31 = false
+        local function v48() -- name: update
+            -- upvalues: (copy) v_u_30, (copy) v_u_29, (ref) v_u_10, (copy) v_u_17, (ref) v_u_7, (copy) v_u_18, (ref) v_u_28, (ref) v_u_5, (copy) v_u_16, (ref) v_u_31, (ref) v_u_8, (copy) v_u_13
+            local v32, v33
+            if v_u_30 then
+                local v34 = v_u_29.PendingCash
+                local v35 = tonumber(v34) or 0
+                local v36 = math.round(v35)
+                v32 = math.max(v36, 0)
+                local v37 = v_u_29.Capacity
+                local v38 = tonumber(v37) or 0
+                local v39 = math.round(v38)
+                v33 = math.max(v39, v32, 1)
+            else
+                local v40 = v_u_10
+                local v41 = tonumber(v40:GetAttribute("OfflineCashPending")) or 0
+                local v42 = math.round(v41)
+                v32 = math.max(v42, 0)
+                local v43 = v_u_10
+                local v44 = tonumber(v43:GetAttribute("OfflineCashCapacity")) or 0
+                local v45 = math.round(v44)
+                v33 = math.max(v45, v32, 1)
+            end
+            local v46 = v32 / v33
+            local v47 = math.clamp(v46, 0, 1)
+            v_u_17.Text = "$" .. v_u_7.Format(v32)
+            v_u_18.Text = "$" .. v_u_7.Format(v33) .. " Cap"
+            if v_u_28 then
+                v_u_28:Cancel()
+            end
+            v_u_28 = v_u_5:Create(v_u_16, TweenInfo.new(0.65, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                ["Size"] = UDim2.fromScale(v47, 1)
+            })
+            v_u_28:Play()
+            if v32 <= 0 or v_u_31 then
+                v_u_8.ClosePage(v_u_13)
+            else
+                v_u_8.OpenPage(v_u_13)
+            end
+        end
+        local v_u_49 = v14:FindFirstChild("2xClaim")
+        if v_u_49 and not v_u_49:IsA("GuiObject") then
+            v_u_49 = nil
+        end
+        if v_u_49 then
+            if not v_u_49:IsA("GuiButton") then
+                local v50 = v_u_49:FindFirstChild("Detector", true)
+                local v51 = v50 and (v50:IsA("GuiButton") and v50) or nil
+            end
+        end
+        if v_u_49 then
+            local v_u_52 = v_u_49:FindFirstChild("Cost")
+        end
+        local v_u_53 = 0
+        local function v66() -- name: refreshDoubleClaim
+            -- upvalues: (ref) v_u_49, (ref) v_u_10, (copy) v_u_30, (copy) v_u_52, (ref) v_u_1, (ref) v_u_12
+            if v_u_49 then
+                local v54 = v_u_10
+                local v55 = tonumber(v54:GetAttribute("OfflineDoubleProductId")) or 0
+                local v_u_56 = math.floor(v55)
+                local v57 = v_u_49
+                local v58
+                if v_u_56 > 0 then
+                    v58 = not v_u_30
+                else
+                    v58 = false
+                end
+                v57.Visible = v58
+                if v_u_56 > 0 then
+                    local v59 = v_u_52
+                    if not v59 or v59:IsA("TextLabel") or (v59:IsA("TextButton") or v59:IsA("TextBox")) then
+                        task.spawn(function()
+                            -- upvalues: (ref) v_u_1, (copy) v_u_56, (ref) v_u_52, (ref) v_u_12
+                            local v60, v61 = pcall(v_u_1.GetProductInfo, v_u_1, v_u_56, Enum.InfoType.Product)
+                            if v60 and typeof(v61) == "table" then
+                                local v62 = v61.PriceInRobux
+                                if tonumber(v62) then
+                                    local v63 = v_u_52
+                                    local v64 = v_u_12
+                                    local v65 = v61.PriceInRobux
+                                    v63.Text = v64 .. tostring(v65)
+                                end
+                            end
+                        end)
+                        return
+                    end
+                end
+            end
+        end
+        if v51 then
+            v51.Activated:Connect(function()
+                -- upvalues: (ref) v_u_10, (ref) v_u_53, (copy) v_u_20
+                local v67 = v_u_10
+                local v68 = tonumber(v67:GetAttribute("OfflineDoubleProductId")) or 0
+                if math.floor(v68) <= 0 then
+                    return
+                else
+                    local v69 = os.clock()
+                    if v69 >= v_u_53 then
+                        v_u_53 = v69 + 1
+                        v_u_20:FireServer("PromptDouble")
+                    end
+                end
+            end)
+        end
+        v_u_10:GetAttributeChangedSignal("OfflineDoubleProductId"):Connect(v66)
+        v66()
+        v19.Activated:Connect(function()
+            -- upvalues: (copy) v_u_30, (ref) v_u_31, (ref) v_u_8, (copy) v_u_13, (ref) v_u_27, (ref) v_u_6, (copy) v_u_20
+            if v_u_30 then
+                v_u_31 = true
+                v_u_8.ClosePage(v_u_13)
+                return
+            else
+                local v70 = os.clock()
+                if v70 >= v_u_27 then
+                    local v71 = v_u_6.ClaimCooldownSeconds
+                    local v72 = tonumber(v71) or 0.5
+                    v_u_27 = v70 + math.max(v72, 0)
+                    v_u_20:FireServer("Claim")
+                end
+            end
+        end)
+        v_u_10:GetAttributeChangedSignal("OfflineCashPending"):Connect(v48)
+        v_u_10:GetAttributeChangedSignal("OfflineCashCapacity"):Connect(v48)
+        task.defer(v48)
+    end
+end
+return v9
