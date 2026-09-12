@@ -1,0 +1,169 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Monetization.MonetizationConfig
+-- Took 0s to decompile.
+
+local v1 = {
+    ["Products"] = {
+        ["1Spin"] = {
+            ["id"] = 3708131024,
+            ["price"] = 79,
+            ["entry"] = "Jackpot Spin",
+            ["amount"] = 1
+        },
+        ["5Spin"] = {
+            ["id"] = 3708131201,
+            ["price"] = 379,
+            ["entry"] = "Jackpot Spin",
+            ["amount"] = 5
+        },
+        ["10Spins"] = {
+            ["id"] = 3708131236,
+            ["price"] = 749,
+            ["entry"] = "Jackpot Spin",
+            ["amount"] = 10
+        }
+    }
+}
+local v2 = {}
+local v3 = {
+    ["id"] = 1947704693,
+    ["price"] = 249,
+    ["vip"] = true,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["bucket"] = "multiplier",
+            ["amount"] = 1.4
+        },
+        ["Money Multiplier"] = {
+            ["bucket"] = "multiplier",
+            ["amount"] = 1.5
+        }
+    }
+}
+v2.VIP = v3
+local v4 = {
+    ["id"] = 1947494705,
+    ["price"] = 199,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["bucket"] = "multiplier",
+            ["amount"] = 1.5
+        }
+    }
+}
+v2.Luck = v4
+local v5 = {
+    ["id"] = 1948976691,
+    ["price"] = 499,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Luck"] = {
+            ["bucket"] = "multiplier",
+            ["amount"] = 3
+        }
+    }
+}
+v2["Ultra Luck"] = v5
+local v6 = {
+    ["id"] = 1948382667,
+    ["price"] = 349,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Roll Duration"] = {
+            ["bucket"] = "base",
+            ["amount"] = -0.6
+        }
+    }
+}
+v2["Roll Speed"] = v6
+local v7 = {
+    ["id"] = 1948802653,
+    ["price"] = 199,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Money Multiplier"] = {
+            ["bucket"] = "multiplier",
+            ["amount"] = 2
+        }
+    }
+}
+v2["More Cash"] = v7
+local v8 = {
+    ["id"] = 1962313153,
+    ["price"] = 799,
+    ["buffs"] = nil,
+    ["buffs"] = {
+        ["Rolls"] = {
+            ["bucket"] = "base",
+            ["amount"] = 1
+        }
+    }
+}
+v2["Double Roll"] = v8
+v1.Gamepasses = v2
+v1.LimitedUnits = {
+    ["Fused Zamatsu"] = {
+        ["id"] = 3710441973,
+        ["price"] = 1299,
+        ["stock"] = 150
+    },
+    ["Emelia"] = {
+        ["id"] = 3710442447,
+        ["price"] = 399,
+        ["stock"] = 500
+    }
+}
+local v9 = {}
+local v10 = {
+    ["money"] = 10000,
+    ["entries"] = nil,
+    ["entries"] = {
+        ["Trait Reroll"] = 2,
+        ["Gems"] = 2,
+        ["Lucky Spin"] = 1
+    }
+}
+v9.RELEASE = v10
+local v11 = {
+    ["entries"] = {
+        ["Trait Reroll"] = 3,
+        ["Gems"] = 3,
+        ["Lucky Spin"] = 2
+    }
+}
+v9.UPDATE1 = v11
+local v12 = {
+    ["entries"] = {
+        ["Trait Reroll"] = 5,
+        ["Gems"] = 5,
+        ["Lucky Spin"] = 2
+    }
+}
+v9.UPDATE2 = v12
+local v13 = {
+    ["entries"] = {
+        ["Trait Reroll"] = 7,
+        ["Gems"] = 7,
+        ["Lucky Spin"] = 2
+    }
+}
+v9.UPDATE3 = v13
+local v14 = {
+    ["entries"] = {
+        ["Trait Reroll"] = 5,
+        ["Gems"] = 5,
+        ["Lucky Spin"] = 2
+    }
+}
+v9["1KCCU"] = v14
+local v15 = {
+    ["entries"] = {
+        ["Trait Reroll"] = 5,
+        ["Gems"] = 5,
+        ["Lucky Spin"] = 2
+    }
+}
+v9["5KCCU"] = v15
+v1.Codes = v9
+return v1

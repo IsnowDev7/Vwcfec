@@ -1,0 +1,164 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Quests.QuestService
+-- Took 0.01s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v2 = game:GetService("DataStoreService")
+local v_u_3 = game:GetService("RunService")
+local v_u_4 = require(script.Parent.QuestConfig)
+local v_u_5 = require(v1.Framework.Features.Monetization.MonetizationService)
+local v_u_6 = require(v1.Framework.Features.Data.DataService)
+local v_u_7 = require(v1.Framework.Features.Inventory.EntryService)
+local v_u_8 = require(v1.Framework.Features.Notifications.NotificationService)
+local v_u_9 = require(v1.Framework.Features.Player.PlayerService)
+local v_u_10 = require(v1.Framework.Utils.DebounceUtil)
+local v11 = require(v1.Packages.Network).ServerComm.new(v1.Network, script.Name)
+local v12 = v11:CreateSignal("Claim")
+local v13 = v11:CreateSignal("Buy")
+local v_u_14 = {}
+local v_u_15 = v2:GetOrderedDataStore("Tickets")
+local v16 = {}
+local function v_u_39(p17, p18, p19) -- name: update
+    -- upvalues: (copy) v_u_6, (copy) v_u_14, (copy) v_u_4
+    local v20 = v_u_6[p17]
+    local v21 = os.time()
+    local v22 = v_u_14[p17] or v21
+    v_u_14[p17] = v21
+    for v23, v24 in v_u_4.Periods do
+        local v25 = v20.Quests[v23]()
+        local v26 = v25.expiresAt
+        local v27 = v26 == 0 and true or v26 <= v21
+        if v26 == 0 then
+            v26 = v21 + v24.duration
+        elseif v27 then
+            local v28 = (v21 - v26) / v24.duration
+            v26 = v26 + (math.floor(v28) + 1) * v24.duration
+        end
+        local v29 = v27 and {} or table.clone(v25.progress)
+        local v30 = v27
+        for _, v31 in v24.quests do
+            local v32
+            if v31.id == "Playtime" then
+                local v33 = v26 - v24.duration
+                local v34 = v21 - math.max(v22, v33)
+                v32 = math.max(0, v34)
+            else
+                v32 = v31.id == p18 and (p19 or 0) or 0
+            end
+            local v35 = v29[v31.id] or 0
+            local v36 = v31.target
+            local v37 = v35 + v32
+            local v38 = math.min(v36, v37)
+            if v38 ~= v35 then
+                v29[v31.id] = v38
+                v27 = true
+            end
+        end
+        if v27 then
+            v20.Quests[v23]({
+                ["expiresAt"] = v26,
+                ["progress"] = v29,
+                ["claimed"] = v30 and {} or table.clone(v25.claimed)
+            })
+        end
+    end
+end
+function v16.AddProgress(p40, p41, p42) -- name: AddProgress
+    -- upvalues: (copy) v_u_9, (copy) v_u_39
+    if v_u_9.IsLoaded(p40) then
+        v_u_39(p40, p41, p42)
+    end
+end
+v12:Connect(function(p43, p44, p45, p46)
+    -- upvalues: (copy) v_u_9, (copy) v_u_10, (copy) v_u_4, (copy) v_u_39, (copy) v_u_6, (copy) v_u_7, (copy) v_u_8
+    if v_u_9.IsLoaded(p43) and (type(p44) == "string" and (type(p45) == "string" and v_u_10.Try(p43, "QuestClaim", 0.2))) then
+        local v47 = v_u_4.Periods[p44]
+        if v47 then
+            v_u_39(p43)
+            local v48 = v_u_6[p43]
+            local v49 = v48.Quests[p44]()
+            if p46 == v49.expiresAt and not v49.claimed[p45] then
+                for _, v50 in v47.quests do
+                    if v50.id == p45 and (v49.progress[p45] or 0) >= v50.target then
+                        local v51 = table.clone(v49.claimed)
+                        v51[p45] = true
+                        v48.Quests[p44].claimed(v51)
+                        v_u_7.Give(p43, "Tickets", v50.tickets)
+                        v_u_8.SendDropNotification(p43, "Tickets", v50.tickets)
+                        return
+                    end
+                end
+            end
+        else
+            return
+        end
+    else
+        return
+    end
+end)
+v13:Connect(function(p52, p53)
+    -- upvalues: (copy) v_u_9, (copy) v_u_10, (copy) v_u_4, (copy) v_u_5, (copy) v_u_7, (copy) v_u_8
+    if v_u_9.IsLoaded(p52) and (type(p53) == "string" and v_u_10.Try(p52, "QuestShopBuy", 0.2)) then
+        for _, v54 in v_u_4.Shop do
+            if v54.name == p53 then
+                if v54.gamepass then
+                    v_u_5.PurchaseGamepassWithTickets(p52, v54.name, v54.tickets)
+                    return
+                elseif v_u_7.Remove(p52, "Tickets", v54.tickets) then
+                    v_u_7.Give(p52, v54.name, v54.amount)
+                    v_u_8.SendDropNotification(p52, v54.name, v54.amount)
+                else
+                    v_u_8.SendTextNotification(p52, {
+                        ["message"] = "You don\'t have enough Tickets!",
+                        ["notificationType"] = "error"
+                    })
+                end
+            end
+        end
+    end
+end)
+v_u_9.AddLoadEvent(function(p55)
+    -- upvalues: (copy) v_u_14, (copy) v_u_39, (copy) v_u_3, (copy) v_u_7, (copy) v_u_6, (copy) v_u_15
+    if v_u_14[p55] then
+        return
+    else
+        v_u_14[p55] = os.time()
+        v_u_39(p55)
+        if not v_u_3:IsStudio() then
+            local v56 = p55.UserId
+            local v_u_57 = tostring(v56)
+            local v_u_58 = v_u_7.GetAmount(p55, "Tickets")
+            if v_u_58 >= 1000 then
+                v_u_6[p55].Inventory.Tickets(nil)
+                if v_u_7.GetAmount(p55, "Lucky Spin") > 40 then
+                    v_u_6[p55].Inventory["Lucky Spin"](nil)
+                end
+            end
+            task.spawn(function()
+                -- upvalues: (ref) v_u_15, (copy) v_u_57, (copy) v_u_58
+                local v59, v60 = pcall(function()
+                    -- upvalues: (ref) v_u_15, (ref) v_u_57, (ref) v_u_58
+                    v_u_15:SetAsync(v_u_57, v_u_58)
+                end)
+                if not v59 then
+                    warn("Failed to save Ticket balance for " .. v_u_57 .. ": " .. tostring(v60))
+                end
+            end)
+        end
+    end
+end)
+v_u_6.Service:addPlayerRemovingCallback(function(p61)
+    -- upvalues: (copy) v_u_14, (copy) v_u_39
+    if v_u_14[p61] then
+        v_u_39(p61)
+        v_u_14[p61] = nil
+    end
+end)
+task.spawn(function()
+    -- upvalues: (copy) v_u_14, (copy) v_u_39
+    while task.wait(1) do
+        for v62 in v_u_14 do
+            v_u_39(v62)
+        end
+    end
+end)
+return v16

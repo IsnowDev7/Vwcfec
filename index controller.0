@@ -1,0 +1,182 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Index.IndexController
+-- Took 0.01s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v_u_2 = require(v1.Framework.Features.Data.DataController)
+local v_u_3 = require(v1.Framework.Features.Inventory.EntryIcon)
+local v_u_4 = require(v1.Framework.Features.Inventory.EntryRegistry)
+require(v1.Framework.Features.Inventory.EntryTypes)
+local v_u_5 = require(v1.Framework.Features.Inventory.Kinds.Unit.Mutations)
+local v6 = require(v1.Framework.Features.Inventory.Kinds.Unit.Variants)
+local v7 = require(v1.Framework.Features.UI.Components.Button)
+local v8 = require(v1.Framework.Features.UI.MenuController)
+local v9 = require(v1.Framework.Features.UI.UIReferences)
+local v_u_10 = require(v1.Packages.NumberFormatter)
+local v11 = v9.Root.Menus.Index
+local v_u_12 = v11.Content.ScrollingFrame
+local v13 = v11.Variants
+local v14 = v11.Mutations
+local _, v15 = v7.init(v9.HUD.Left.Index)
+local v_u_16 = nil
+local v_u_17 = nil
+local v_u_18 = {}
+local v_u_19 = {}
+local v_u_20 = v_u_4.entriesOfKind("Unit")
+local function v_u_32(p21, p22) -- name: renderUnit
+    -- upvalues: (copy) v_u_20, (copy) v_u_2, (copy) v_u_19, (copy) v_u_4, (copy) v_u_3, (copy) v_u_10, (copy) v_u_12
+    if not v_u_20[p21].limited and v_u_20[p21].chance then
+        local v23 = v_u_2.DiscoveredUnits()[p21]
+        local v_u_24
+        if p22 then
+            v_u_24 = v23 and (v23.mutations and v23.mutations[p22]) and true or false
+        else
+            v_u_24 = v23 and true or false
+        end
+        local v25 = p21 .. "\0" .. (p22 or "")
+        local v26 = v_u_19[v25]
+        if v26 then
+            v26:Destroy()
+        end
+        local v27 = v_u_4.getEntryConfig(p21)
+        local v31 = v_u_3.new({
+            ["name"] = nil,
+            ["amount"] = 1,
+            ["attributes"] = nil,
+            ["tooltip"] = nil,
+            ["callback"] = nil,
+            ["name"] = p21,
+            ["attributes"] = {
+                ["level"] = 1,
+                ["mutation"] = nil,
+                ["mutation"] = p22
+            },
+            ["tooltip"] = v_u_24,
+            ["callback"] = function(p28) -- name: callback
+                -- upvalues: (copy) v_u_24
+                for _, v29 in p28:GetDescendants() do
+                    if v29:IsA("ViewportFrame") then
+                        local v30
+                        if v_u_24 then
+                            v30 = Color3.fromRGB(255, 255, 255)
+                        else
+                            v30 = Color3.fromRGB(0, 0, 0)
+                        end
+                        v29.ImageColor3 = v30
+                    end
+                end
+                p28.LayoutOrder = -p28.LayoutOrder
+            end
+        })
+        v31:GetIcon().BottomLabel.Text = "1 in " .. v_u_10.FormatCompact(v27.chance({
+            ["mutation"] = p22
+        }))
+        v31:GetIcon().Parent = v_u_12
+        v_u_19[v25] = v31
+    end
+end
+local function v_u_40() -- name: renderIndex
+    -- upvalues: (copy) v_u_19, (copy) v_u_20, (ref) v_u_17, (copy) v_u_32, (ref) v_u_16
+    for v33, v34 in v_u_19 do
+        v34:Destroy()
+        v_u_19[v33] = nil
+    end
+    local v35 = {}
+    for v36 in v_u_20 do
+        if not v_u_20[v36].limited and v_u_20[v36].chance and v_u_20[v36].variant == v_u_17 then
+            table.insert(v35, v36)
+        end
+    end
+    table.sort(v35, function(p37, p38)
+        -- upvalues: (ref) v_u_20
+        if v_u_20[p37].chance() == v_u_20[p38].chance() then
+            return p37 < p38
+        else
+            return v_u_20[p37].chance() < v_u_20[p38].chance()
+        end
+    end)
+    for _, v39 in v35 do
+        v_u_32(v39, v_u_16)
+    end
+end
+function v_u_18.SetMutationCategory(p41) -- name: SetMutationCategory
+    -- upvalues: (copy) v_u_5, (ref) v_u_16, (copy) v_u_40
+    if p41 == nil or v_u_5[p41] then
+        if v_u_16 ~= p41 then
+            v_u_16 = p41
+            v_u_40()
+        end
+    else
+        return
+    end
+end
+function v_u_18.SetVariantCategory(p42) -- name: SetVariantCategory
+    -- upvalues: (ref) v_u_17, (copy) v_u_40
+    if v_u_17 ~= p42 then
+        v_u_17 = p42
+        v_u_40()
+    end
+end
+v_u_2.DiscoveredUnits.OnKeyAdded(function(p43)
+    -- upvalues: (ref) v_u_16, (copy) v_u_20, (ref) v_u_17, (copy) v_u_32
+    if v_u_16 == nil and v_u_20[p43] and v_u_20[p43].variant == v_u_17 then
+        v_u_32(p43)
+    end
+end)
+v_u_2.DiscoveredUnits.Changed(function(_, _, p44)
+    -- upvalues: (copy) v_u_40
+    if p44 == nil then
+        v_u_40()
+    end
+end)
+local v_u_45 = v_u_17
+local v_u_46 = v_u_16
+for v_u_47 in v_u_20 do
+    v_u_2.DiscoveredUnits[v_u_47].mutations.Changed(function(_, _, p48)
+        -- upvalues: (ref) v_u_46, (copy) v_u_20, (copy) v_u_47, (ref) v_u_45, (copy) v_u_32
+        if p48 and (p48 == v_u_46 and v_u_20[v_u_47]) and v_u_20[v_u_47].variant == v_u_45 then
+            v_u_32(v_u_47, p48)
+        end
+    end)
+end
+for v_u_49, v50 in pairs(v6) do
+    local v51, v52 = v7.init(v13.None:Clone())
+    v51:SetText(v_u_49)
+    v51:ChangeColor(v50.color)
+    v52.Parent = v13
+    v52.LayoutOrder = v50.chanceMultiplier
+    v52.Activated:Connect(function()
+        -- upvalues: (copy) v_u_18, (copy) v_u_49
+        v_u_18.SetVariantCategory(v_u_49)
+    end)
+end
+for v_u_53, v54 in pairs(v_u_5) do
+    local v55, v56 = v7.init(v14.None:Clone())
+    v56.Frame.Info.ImageLabel.Image = v54.image
+    v55:ChangeColor(v54.color)
+    v56.Parent = v14
+    v56.LayoutOrder = v54.chance
+    v56.Activated:Connect(function()
+        -- upvalues: (copy) v_u_18, (copy) v_u_53
+        v_u_18.SetMutationCategory(v_u_53)
+    end)
+end
+v7.init(v14.None)
+v7.init(v13.None)
+v14.None.Activated:Connect(function()
+    -- upvalues: (copy) v_u_18
+    v_u_18.SetMutationCategory(nil)
+end)
+v13.None.Activated:Connect(function()
+    -- upvalues: (copy) v_u_18
+    v_u_18.SetVariantCategory(nil)
+end)
+local v_u_57 = false
+v15.Activated:Connect(function()
+    -- upvalues: (ref) v_u_57, (copy) v_u_40
+    if not v_u_57 then
+        v_u_57 = true
+        v_u_40()
+    end
+end)
+v8.InitMenuButton(v15, v11)
+return v_u_18

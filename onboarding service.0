@@ -1,0 +1,197 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Onboarding.OnboardingService
+-- Took 0.01s to decompile.
+
+local v_u_1 = game:GetService("AnalyticsService")
+local v2 = game:GetService("ReplicatedStorage")
+local v_u_3 = require(script.Parent.OnboardingConfig)
+local v_u_4 = require(v2.Framework.Features.Data.DataService)
+local v_u_5 = require(v2.Framework.Features.Inventory.EntryRegistry)
+local v_u_6 = require(v2.Framework.Features.Inventory.Kinds.Unit.UnitService)
+local v7 = require(v2.Framework.Features.Player.PlayerService)
+local v_u_8 = require(v2.Packages.Maid)
+local v_u_9 = {}
+local function v_u_19(p10, p11) -- name: isInside
+    local v12 = p10.Character
+    if v12 then
+        v12 = v12:FindFirstChild("HumanoidRootPart")
+    end
+    if not (v12 and v12:IsA("BasePart")) then
+        return false
+    end
+    local v13 = p11.CFrame:PointToObjectSpace(v12.Position)
+    local v14 = p11.Size / 2 + Vector3.new(5, 5, 5)
+    local v15 = v13.X
+    local v16
+    if math.abs(v15) <= v14.X then
+        local v17 = v13.Y
+        if math.abs(v17) <= v14.Y then
+            local v18 = v13.Z
+            v16 = math.abs(v18) <= v14.Z
+        else
+            v16 = false
+        end
+    else
+        v16 = false
+    end
+    return v16
+end
+local v_u_32 = {
+    [1] = function(p20) -- name: hasUnit
+        -- upvalues: (copy) v_u_4, (copy) v_u_5
+        for _, v21 in v_u_4[p20].Inventory() do
+            local v22 = v_u_5.getEntryConfig(v21.name)
+            if v22 and v22.kind == "Unit" then
+                return true
+            end
+        end
+        return false
+    end,
+    [3] = function(p23)
+        -- upvalues: (copy) v_u_6
+        return v_u_6.GetEquippedUnit(p23) ~= nil
+    end,
+    [4] = function(p24) -- name: hasPlacedUnit
+        -- upvalues: (copy) v_u_4
+        for _, v25 in v_u_4[p24].Slots() do
+            if v25.unitId then
+                return true
+            end
+        end
+        return false
+    end,
+    [5] = function(p26)
+        -- upvalues: (copy) v_u_4
+        return v_u_4[p26].Money() > 0
+    end,
+    [6] = function(p27)
+        -- upvalues: (copy) v_u_19
+        return v_u_19(p27, workspace.Zones.ShopArea)
+    end,
+    [7] = function(p28)
+        -- upvalues: (copy) v_u_19
+        return v_u_19(p28, workspace.Zones.DiceShop)
+    end,
+    [8] = function(p29)
+        -- upvalues: (copy) v_u_4, (copy) v_u_3
+        return v_u_4[p29].OwnedDice[v_u_3.FIRST_DICE]() == true
+    end,
+    [11] = function(p30)
+        -- upvalues: (copy) v_u_4
+        return v_u_4[p30].Rolls() > 1
+    end,
+    [12] = function(p31)
+        -- upvalues: (copy) v_u_4
+        return v_u_4[p31].AutoRoll()
+    end
+}
+local v_u_33 = {
+    [2] = true,
+    [9] = true,
+    [10] = true,
+    [13] = true
+}
+local function v_u_44(p34) -- name: reconcile
+    -- upvalues: (copy) v_u_4, (copy) v_u_32, (copy) v_u_3, (copy) v_u_1
+    local v35 = v_u_4[p34]
+    while true do
+        local v36 = v_u_32[v35.OnboardingStep()]
+        if not (v36 and v36(p34)) then
+            break
+        end
+        local v37 = v_u_4[p34]
+        if v37 then
+            local v38 = v37.OnboardingStep()
+            local v39 = v_u_3.STEPS[v38]
+            if v39 then
+                v37.OnboardingStep(v38 + 1)
+                local v40 = v38 + 1
+                local v41 = v39.completedEvent
+                local v42, v43 = pcall(v_u_1.LogOnboardingFunnelStepEvent, v_u_1, p34, v40, v41)
+                if not v42 then
+                    warn("Failed to log onboarding step:", v43)
+                end
+            end
+        end
+    end
+end
+require(v2.Packages.Network).ServerComm.new(v2.Network, script.Name):CreateSignal("Advance"):Connect(function(p45)
+    -- upvalues: (copy) v_u_4, (copy) v_u_32, (copy) v_u_33, (copy) v_u_3, (copy) v_u_1, (copy) v_u_44
+    local v46 = v_u_4[p45]
+    if v46 then
+        local v47 = v46.OnboardingStep()
+        local v48 = v_u_32[v47]
+        if v_u_33[v47] or v48 and v48(p45) then
+            local v49 = v_u_4[p45]
+            if v49 then
+                local v50 = v49.OnboardingStep()
+                local v51 = v_u_3.STEPS[v50]
+                if v51 then
+                    v49.OnboardingStep(v50 + 1)
+                    local v52 = v50 + 1
+                    local v53 = v51.completedEvent
+                    local v54, v55 = pcall(v_u_1.LogOnboardingFunnelStepEvent, v_u_1, p45, v52, v53)
+                    if not v54 then
+                        warn("Failed to log onboarding step:", v55)
+                    end
+                end
+            end
+            v_u_44(p45)
+        end
+    end
+end)
+v7.AddLoadEvent(function(p_u_56) -- name: onPlayerLoaded
+    -- upvalues: (copy) v_u_4, (copy) v_u_1, (copy) v_u_3, (copy) v_u_8, (copy) v_u_9, (copy) v_u_44
+    local v_u_57 = v_u_4[p_u_56]
+    if v_u_57.OnboardingStep() == 0 then
+        v_u_57.OnboardingStep(1)
+        local v58, v59 = pcall(v_u_1.LogOnboardingFunnelStepEvent, v_u_1, p_u_56, 1, "Tutorial Started")
+        if not v58 then
+            warn("Failed to log onboarding step:", v59)
+        end
+    end
+    if v_u_57.OnboardingStep() <= #v_u_3.STEPS then
+        local v60 = v_u_8.new()
+        v_u_9[p_u_56] = v60
+        v60:Add(v_u_57.Inventory.OnKeyAdded(function()
+            -- upvalues: (ref) v_u_44, (copy) p_u_56
+            v_u_44(p_u_56)
+        end))
+        v60:Add(v_u_57.Slots.Changed(function()
+            -- upvalues: (ref) v_u_44, (copy) p_u_56
+            v_u_44(p_u_56)
+        end))
+        v60:Add(v_u_57.Money.Changed(function()
+            -- upvalues: (ref) v_u_44, (copy) p_u_56
+            v_u_44(p_u_56)
+        end))
+        v60:Add(v_u_57.Rolls.Changed(function()
+            -- upvalues: (ref) v_u_44, (copy) p_u_56
+            v_u_44(p_u_56)
+        end))
+        v60:Add(v_u_57.OwnedDice[v_u_3.FIRST_DICE].Changed(function()
+            -- upvalues: (ref) v_u_44, (copy) p_u_56
+            v_u_44(p_u_56)
+        end))
+        v60:Add(v_u_57.AutoRoll.Changed(function()
+            -- upvalues: (ref) v_u_44, (copy) p_u_56
+            v_u_44(p_u_56)
+        end))
+        v60:Add(task.spawn(function()
+            -- upvalues: (copy) v_u_57, (ref) v_u_3, (ref) v_u_44, (copy) p_u_56
+            while v_u_57.OnboardingStep() <= #v_u_3.STEPS do
+                task.wait(0.25)
+                v_u_44(p_u_56)
+            end
+        end))
+        v_u_44(p_u_56)
+    end
+end)
+v7.PlayerRemoving:Connect(function(p61)
+    -- upvalues: (copy) v_u_9
+    local v62 = v_u_9[p61]
+    if v62 then
+        v62:Destroy()
+        v_u_9[p61] = nil
+    end
+end)
+return {}

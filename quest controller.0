@@ -1,0 +1,245 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Quests.QuestController
+-- Took 0.03s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v_u_2 = require(v1.Packages.NumberFormatter)
+local v_u_3 = require(v1.Framework.Features.Data.DataController)
+local v_u_4 = require(v1.Framework.Features.UI.MenuController)
+local v5 = require(v1.Framework.Features.Inventory.EntryRegistry)
+local v_u_6 = require(v1.Packages.TimeFormatter)
+local v7 = require(v1.Framework.Features.UI.UIReferences)
+require(v1.Framework.Features.Inventory.EntryTypes)
+require(v1.Packages.TopbarPlus)
+local v8 = require(v1.Framework.Other.Rarities)
+local v9 = require(v1.Framework.Utils.ZoneUtil)
+local v10 = require(v1.Packages.Network)
+local v_u_11 = require(v1.Framework.Features.UI.Components.Button)
+local v_u_12 = require(script.Parent.QuestConfig)
+local v13 = v10.ClientComm.new(v1.Network, false, "QuestService")
+local v_u_14 = v13:GetSignal("Claim")
+local v_u_15 = v13:GetSignal("Buy")
+local v_u_16 = v7.Menus.Quests
+local v_u_17 = v_u_16.Quests.ScrollingFrame
+local v18 = v_u_16.Shop.ScrollingFrame
+local v19 = v_u_16.Filters.ScrollingFrame
+local v_u_20 = v_u_17.Template
+local v21 = v18.Template
+local v_u_22 = "Daily"
+local v_u_23 = {}
+local v_u_24 = {}
+local v_u_25 = {}
+local v_u_26 = Color3.fromRGB(240, 65, 65)
+local v_u_27 = Color3.fromRGB(255, 210, 55)
+local v_u_28 = Color3.fromRGB(70, 220, 95)
+v_u_20.Visible = false
+v21.Visible = false
+v_u_17.AutomaticCanvasSize = Enum.AutomaticSize.Y
+v_u_17.CanvasSize = UDim2.new()
+v18.AutomaticCanvasSize = Enum.AutomaticSize.Y
+v18.CanvasSize = UDim2.new()
+v_u_17.TimeRemaining.LayoutOrder = -1
+local function v_u_57() -- name: update
+    -- upvalues: (copy) v_u_3, (copy) v_u_24, (copy) v_u_2, (copy) v_u_28, (copy) v_u_26, (ref) v_u_22, (copy) v_u_17, (copy) v_u_6, (copy) v_u_23, (copy) v_u_27
+    local v29 = workspace:GetServerTimeNow()
+    local v30 = math.floor(v29)
+    local v31 = v_u_3.Inventory.Tickets()
+    local v32 = not v31 and 0 or v31.amount
+    for _, v33 in v_u_24 do
+        local v34 = v33.config.gamepass
+        if v34 then
+            v34 = v_u_3.OwnedGamepasses[v33.config.name]() == true
+        end
+        v33.button:SetText(v34 and "Owned" or v_u_2.FormatInt(v32) .. " / " .. v_u_2.FormatInt(v33.config.tickets))
+        v33.instance.Interactable = not v34
+        local v35 = v33.config.tickets <= v32
+        local v36 = v33.button
+        local v37 = ColorSequence.new
+        local v38
+        if v34 then
+            v38 = Color3.fromRGB(177, 177, 177)
+        elseif v35 then
+            v38 = v_u_28
+        else
+            v38 = v_u_26
+        end
+        v36:ChangeColor(v37(v38))
+    end
+    if v_u_22 ~= "Shop" then
+        local v39 = v_u_3.Quests[v_u_22]()
+        local v40 = v39.expiresAt == 0 and true or v39.expiresAt <= v30
+        local v41 = v39.expiresAt - v30
+        local v42 = math.max(0, v41)
+        v_u_17.TimeRemaining.Text = v40 and "Refreshing quests..." or "Refreshes in " .. v_u_6.FormatSecondToTime("time_units", v42)
+        for _, v43 in v_u_23 do
+            local v44 = v43.config
+            local v45
+            if v40 then
+                v45 = 0
+            else
+                local v46 = v44.target
+                local v47 = v39.progress[v44.id] or 0
+                v45 = math.min(v46, v47)
+            end
+            local v48 = v45 / v44.target
+            local v49 = not v40
+            if v49 then
+                v49 = v39.claimed[v44.id] == true
+            end
+            local v50 = not (v40 or v49)
+            if v50 then
+                v50 = v44.target <= v45
+            end
+            local v51
+            if v48 <= 0.5 then
+                v51 = v_u_26:Lerp(v_u_27, v48 * 2)
+            else
+                v51 = v_u_27:Lerp(v_u_28, (v48 - 0.5) * 2)
+            end
+            v43.frame.Bar.Frame.Size = UDim2.fromScale(v48, 1)
+            v43.frame.Bar.Frame.BackgroundColor3 = Color3.new(1, 1, 1)
+            v43.frame.Bar.Frame.UIGradient.Color = ColorSequence.new(v51)
+            local v52 = v43.progress
+            local v53
+            if v44.id == "Playtime" then
+                v53 = v_u_6.FormatSecondToTime("time_units", v45) .. " / " .. v_u_6.FormatSecondToTime("time_units", v44.target)
+            else
+                v53 = v_u_2.FormatInt(v45) .. " / " .. v_u_2.FormatInt(v44.target)
+            end
+            v52.Text = v53
+            v43.button:SetText(v49 and "Claimed" or "Claim")
+            local v54 = v43.button
+            local v55 = ColorSequence.new
+            local v56
+            if v50 then
+                v56 = v_u_28
+            else
+                v56 = Color3.fromRGB(177, 177, 177)
+            end
+            v54:ChangeColor(v55(v56))
+            v43.frame.Buttons.Claim.Interactable = v50
+        end
+    end
+end
+local function v_u_74(p_u_58) -- name: selectTab
+    -- upvalues: (ref) v_u_22, (copy) v_u_16, (copy) v_u_25, (copy) v_u_23, (copy) v_u_17, (copy) v_u_12, (copy) v_u_20, (copy) v_u_11, (copy) v_u_3, (copy) v_u_14, (copy) v_u_57
+    v_u_22 = p_u_58
+    v_u_16.Quests.Visible = p_u_58 ~= "Shop"
+    v_u_16.Shop.Visible = p_u_58 == "Shop"
+    for v59, v60 in v_u_25 do
+        local v61 = ColorSequence.new
+        local v62
+        if v59 == p_u_58 then
+            v62 = Color3.fromRGB(85, 170, 255)
+        else
+            v62 = Color3.fromRGB(200, 200, 200)
+        end
+        v60:ChangeColor(v61(v62))
+    end
+    for _, v63 in v_u_23 do
+        v63.frame:Destroy()
+    end
+    table.clear(v_u_23)
+    if p_u_58 ~= "Shop" then
+        v_u_17.CanvasPosition = Vector2.zero
+        for v64, v_u_65 in v_u_12.Periods[p_u_58].quests do
+            local v66 = v_u_20:Clone()
+            v66.Name = v_u_65.id
+            v66.LayoutOrder = v64
+            v66.Visible = true
+            v66.QuestGoal.Text = v_u_65.title
+            v66.Display.QuestImage.Image = v_u_65.image
+            local v67 = v66.Buttons.Tickets.Amount
+            local v68 = v_u_65.tickets
+            v67.Text = tostring(v68)
+            local v69 = v66.QuestGoal:Clone()
+            v69.Name = "Progress"
+            v69.AnchorPoint = Vector2.zero
+            v69.Position = UDim2.fromScale(0, 0)
+            v69.Size = UDim2.fromScale(1, 1)
+            v69.BackgroundTransparency = 1
+            v69.TextXAlignment = Enum.TextXAlignment.Center
+            v69.TextYAlignment = Enum.TextYAlignment.Center
+            v69.TextScaled = true
+            v69.TextColor3 = Color3.new(1, 1, 1)
+            v69.TextStrokeTransparency = 0.4
+            v69.ZIndex = v66.Bar.Frame.ZIndex + 1
+            v69.Visible = false
+            v69.Parent = v66.Bar
+            local v70, v71 = v_u_11.init(v66.Buttons.Claim)
+            v71.Activated:Connect(function()
+                -- upvalues: (ref) v_u_3, (copy) p_u_58, (ref) v_u_14, (copy) v_u_65
+                local v72 = v_u_3.Quests[p_u_58]()
+                v_u_14:Fire(p_u_58, v_u_65.id, v72.expiresAt)
+            end)
+            v66.Parent = v_u_17
+            local v73 = v_u_23
+            table.insert(v73, {
+                ["frame"] = v66,
+                ["config"] = v_u_65,
+                ["button"] = v70,
+                ["progress"] = v69
+            })
+        end
+    end
+    v_u_57()
+end
+for v75, v_u_76 in { "Daily", "Weekly", "Shop" } do
+    local v77, v78 = v_u_11.init(v19[v_u_76])
+    v78.LayoutOrder = v75
+    v_u_25[v_u_76] = v77
+    v78.Activated:Connect(function()
+        -- upvalues: (copy) v_u_74, (copy) v_u_76
+        v_u_74(v_u_76)
+    end)
+end
+for v79, v_u_80 in v_u_12.Shop do
+    local v81 = v21:Clone()
+    v81.Name = v_u_80.name
+    v81.LayoutOrder = v79
+    v81.Visible = true
+    v81.Title.Text = v_u_80.name
+    local v82
+    if v_u_80.gamepass then
+        local v83 = v7.Menus.Shop.Main.List:FindFirstChild(v_u_80.name, true)
+        v81.Icon.Image = v83.GamepassIcon.Image
+        v82 = v8.Get("Celestial").gradient
+    else
+        local v84 = v5.expectEntryConfig(v_u_80.name)
+        v81.Icon.Image = v84.image
+        v82 = v84.gradient
+    end
+    v81.Icon.UIGradient.Color = ColorSequence.new(Color3.new(1, 1, 1))
+    v81.Frame.UIGradient.Color = v82
+    v81.rainbow.Color = v82
+    local v85, v86 = v_u_11.init(v81.Buy)
+    v86.Activated:Connect(function()
+        -- upvalues: (copy) v_u_15, (copy) v_u_80
+        v_u_15:Fire(v_u_80.name)
+    end)
+    v81.Parent = v18
+    table.insert(v_u_24, {
+        ["config"] = v_u_80,
+        ["button"] = v85,
+        ["instance"] = v86
+    })
+end
+v_u_3.Quests.Changed(v_u_57)
+v_u_3.Inventory.Tickets.Changed(v_u_57)
+v_u_3.OwnedGamepasses.Changed(v_u_57)
+v_u_74("Daily")
+task.spawn(function()
+    -- upvalues: (copy) v_u_16, (copy) v_u_57
+    while task.wait(1) do
+        if v_u_16.Visible then
+            v_u_57()
+        end
+    end
+end)
+v9.InitPlayerZone(workspace.Zones, "Quests", function(_)
+    -- upvalues: (copy) v_u_4, (copy) v_u_16
+    v_u_4.OpenMenu(v_u_16)
+end, function(_)
+    -- upvalues: (copy) v_u_4
+    v_u_4.CloseMenu()
+end)
+return {}

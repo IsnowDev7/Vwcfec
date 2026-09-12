@@ -1,0 +1,52 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Rewards.OfflineEarningsController
+-- Took 0s to decompile.
+
+local v1 = game:GetService("GuiService")
+local v2 = game:GetService("Players")
+local v3 = game:GetService("ReplicatedStorage")
+local v4 = require(v3.Framework.Features.UI.Components.Button)
+local v5 = require(v3.Framework.Features.Data.DataController)
+local v_u_6 = require(v3.Framework.Features.UI.MenuController)
+local v7 = require(v3.Framework.Features.UI.UIReferences)
+local v8 = require(v3.Packages.Network)
+local v_u_9 = require(v3.Packages.NumberFormatter)
+local v_u_10 = v8.ClientComm.new(v3.Network, false, "OfflineEarningsService"):GetSignal("Claim")
+local v_u_11 = v2.LocalPlayer.PlayerGui
+local v_u_12 = v_u_11.Root
+local v_u_13 = script.OfflineReminder
+local v_u_14 = v7.Menus.OfflineRewards
+local _, v_u_15 = v4.init(v_u_14.Buttons.Claim)
+local v_u_16 = false
+v_u_14.Buttons["2x"].Visible = false
+v1.MenuOpened:Connect(function()
+    -- upvalues: (copy) v_u_13, (copy) v_u_11, (copy) v_u_12
+    v_u_13.Parent = v_u_11
+    v_u_13.Enabled = true
+    v_u_12.Enabled = false
+end)
+v1.MenuClosed:Connect(function()
+    -- upvalues: (copy) v_u_13, (copy) v_u_11, (copy) v_u_12
+    v_u_13.Parent = v_u_11
+    v_u_13.Enabled = false
+    v_u_12.Enabled = true
+end)
+local v17 = v1.MenuIsOpen
+v_u_13.Parent = v_u_11
+v_u_13.Enabled = v17
+v_u_12.Enabled = not v17
+v_u_15.Activated:Connect(function()
+    -- upvalues: (copy) v_u_10
+    v_u_10:Fire()
+end)
+v5.PendingOfflineEarnings.Observe(function(p18)
+    -- upvalues: (copy) v_u_14, (copy) v_u_9, (copy) v_u_15, (ref) v_u_16, (copy) v_u_6
+    v_u_14.MoneyAmount.Text = "$" .. v_u_9.FormatCompact(p18, 2)
+    v_u_15.Interactable = p18 > 0
+    if p18 > 0 and not v_u_16 then
+        v_u_16 = true
+        task.defer(v_u_6.OpenMenu, v_u_14)
+    elseif p18 <= 0 and v_u_6.ActiveMenu() == v_u_14 then
+        v_u_6.CloseMenu()
+    end
+end)
+return {}

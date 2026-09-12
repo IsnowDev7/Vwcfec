@@ -1,0 +1,157 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Rewards.DailyRewardController
+-- Took 0.02s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v_u_2 = require(v1.Framework.Features.Data.DataController)
+local v_u_3 = require(v1.Framework.Features.Inventory.EntryRegistry)
+require(v1.Framework.Features.Inventory.EntryTypes)
+local v_u_4 = require(v1.Framework.Features.Inventory.Kinds.Unit.UnitUtil)
+local v_u_5 = require(v1.Framework.Features.UI.Components.Button)
+local v_u_6 = require(v1.Framework.Features.UI.MenuController)
+local v7 = require(v1.Framework.Features.UI.UIReferences)
+local v_u_8 = require(v1.Framework.Utils.ViewportUtil)
+local v_u_9 = require(v1.Framework.Other.Rarities)
+local v_u_10 = require(v1.Framework.Features.Onboarding.OnboardingConfig)
+local v11 = require(v1.Packages.Network)
+local v_u_12 = require(v1.Packages.TimeFormatter)
+local v13 = require(v1.Packages.TopbarPlus)
+local v_u_14 = require(script.Parent.DailyRewardConfig)
+local v_u_15 = v11.ClientComm.new(v1.Network, false, "DailyRewardService"):GetSignal("Claim")
+local v_u_16 = v7.Menus.DailyRewards
+local v17 = v_u_16["Day1-6"]["Day1-6Template"]
+local v_u_18 = {}
+local v_u_19 = v13.new():setName("DailyRewards"):setLabel("Daily Rewards"):setImage("rbxassetid://128616211368505"):setCaption("Daily Rewards"):setRight():setOrder(1):oneClick()
+v_u_19.selected:Connect(function()
+    -- upvalues: (copy) v_u_6, (copy) v_u_16
+    if v_u_6.ActiveMenu() == v_u_16 then
+        v_u_6.CloseMenu()
+    else
+        v_u_6.OpenMenu(v_u_16)
+    end
+end)
+local function v28(p20, p21) -- name: displayReward
+    -- upvalues: (copy) v_u_14, (copy) v_u_3, (copy) v_u_9, (copy) v_u_8, (copy) v_u_4, (copy) v_u_5, (copy) v_u_15, (copy) v_u_18
+    local v22 = v_u_14.Rewards[p21]
+    local v23 = v_u_3.expectEntryConfig(v22.name)
+    local v24 = v23.kind == "Unit"
+    p20.Name = "Day" .. p21
+    p20.LayoutOrder = p21
+    p20.Day.Text = "Day " .. p21
+    p20.Amount.Text = "x" .. v22.amount
+    p20.RarityStroke.UIGradient.Color = v_u_9.Get(v22.rarity).gradient
+    p20.Icon.Visible = not v24
+    p20.IconShadow.Visible = not v24
+    p20.Model.Visible = v24
+    if v24 then
+        local v25 = v23.model()
+        v_u_8.ApplyModelToViewport(p20.Model, v25)
+        v_u_4.PlayAnimation(v25)
+    else
+        local v26 = v23.image
+        p20.Icon.Image = v26
+        p20.IconShadow.Image = v26
+    end
+    local _, v27 = v_u_5.init(p20)
+    v27.Activated:Connect(function()
+        -- upvalues: (ref) v_u_15
+        v_u_15:Fire()
+    end)
+    v_u_18[p21] = p20
+end
+local v_u_29 = nil
+local v_u_30 = false
+for v31 = 1, 6 do
+    local v32 = v17:Clone()
+    v32.Parent = v_u_16["Day1-6"]
+    v28(v32, v31)
+end
+v17.Visible = false
+v28(v_u_16.Day7.Day7Template, 7)
+local function v_u_37(p33) -- name: schedulePopup
+    -- upvalues: (copy) v_u_10, (ref) v_u_30, (copy) v_u_2, (copy) v_u_14, (copy) v_u_6, (copy) v_u_16
+    if p33 > #v_u_10.STEPS and not v_u_30 then
+        v_u_30 = true
+        task.delay(22.5, function()
+            -- upvalues: (ref) v_u_2, (ref) v_u_14, (ref) v_u_6, (ref) v_u_16
+            local v34 = v_u_2.LastDailyRewardClaim()
+            local v35
+            if v34 == 0 then
+                v35 = 0
+            else
+                local v36 = v_u_14.Cooldown - (os.time() - v34)
+                v35 = math.max(0, v36)
+            end
+            if v35 <= 0 then
+                v_u_6.OpenMenu(v_u_16)
+            end
+        end)
+    end
+end
+local function v_u_49() -- name: update
+    -- upvalues: (copy) v_u_2, (copy) v_u_14, (ref) v_u_29, (copy) v_u_18, (copy) v_u_16, (copy) v_u_12, (copy) v_u_19, (copy) v_u_6
+    local v38 = v_u_2.DailyRewardsClaimed()
+    local v39 = v_u_2.LastDailyRewardClaim()
+    local v40
+    if v39 == 0 then
+        v40 = 0
+    else
+        local v41 = v_u_14.Cooldown - (os.time() - v39)
+        v40 = math.max(0, v41)
+    end
+    local v42 = v40 <= 0
+    local v43
+    if v_u_29 == true then
+        v43 = not v42
+    else
+        v43 = false
+    end
+    if #v_u_14.Rewards > v38 then
+        local _ = v38 + 1
+    end
+    local v44
+    if #v_u_14.Rewards <= v38 then
+        v44 = v42
+    else
+        v44 = false
+    end
+    for v45, v46 in v_u_18 do
+        local v47 = v46.Claimed
+        local v48 = not v44
+        if v48 then
+            v48 = v45 <= v38
+        end
+        v47.Visible = v48
+    end
+    v_u_16.NextRewardTimer.Text = v42 and "Reward Ready!" or "Next Reward In: " .. v_u_12.FormatSecondToTime("time_units", v40)
+    if v42 ~= v_u_29 then
+        v_u_29 = v42
+        v_u_19:setLabel(v42 and "Claim Reward" or "Daily Rewards")
+        if v42 then
+            v_u_19:notify()
+        else
+            v_u_19:clearNotices()
+        end
+    end
+    if v43 and v_u_6.ActiveMenu() == v_u_16 then
+        task.delay(3, function()
+            -- upvalues: (ref) v_u_6, (ref) v_u_16
+            if v_u_6.ActiveMenu() == v_u_16 then
+                v_u_6.CloseMenu()
+            end
+        end)
+    end
+end
+task.delay(8, function()
+    -- upvalues: (copy) v_u_2, (copy) v_u_49, (copy) v_u_37
+    v_u_2.DailyRewardsClaimed.Changed(v_u_49)
+    v_u_2.LastDailyRewardClaim.Changed(v_u_49)
+    v_u_2.OnboardingStep.Observe(v_u_37)
+    task.spawn(function()
+        -- upvalues: (ref) v_u_49
+        while task.wait(1) do
+            v_u_49()
+        end
+    end)
+    v_u_49()
+end)
+return {}

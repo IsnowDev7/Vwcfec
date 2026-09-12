@@ -1,0 +1,113 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Quests.QuestConfig
+-- Took 0s to decompile.
+
+local v1 = {}
+local v2 = {
+    ["Daily"] = {
+        ["duration"] = 86400,
+        ["quests"] = nil,
+        ["quests"] = {
+            {
+                ["id"] = "Playtime",
+                ["title"] = "Play for 30 minutes!",
+                ["target"] = 1800,
+                ["tickets"] = 5,
+                ["image"] = "rbxassetid://104587849849410"
+            },
+            {
+                ["id"] = "Rolls",
+                ["title"] = "Roll 1,000 times!",
+                ["target"] = 1000,
+                ["tickets"] = 5,
+                ["image"] = "rbxassetid://91674719981584"
+            },
+            {
+                ["id"] = "Towers",
+                ["title"] = "Defeat 2 towers!",
+                ["target"] = 2,
+                ["tickets"] = 5,
+                ["image"] = "rbxassetid://97211961212250"
+            },
+            {
+                ["id"] = "UnitsSold",
+                ["title"] = "Sell 500 units!",
+                ["target"] = 500,
+                ["tickets"] = 5,
+                ["image"] = "rbxassetid://104085872137104"
+            }
+        }
+    },
+    ["Weekly"] = {
+        ["duration"] = 604800,
+        ["quests"] = nil,
+        ["quests"] = {
+            {
+                ["id"] = "Playtime",
+                ["title"] = "Play for 5 hours!",
+                ["target"] = 18000,
+                ["tickets"] = 30,
+                ["image"] = "rbxassetid://104587849849410"
+            },
+            {
+                ["id"] = "Rolls",
+                ["title"] = "Roll 7,500 times!",
+                ["target"] = 7500,
+                ["tickets"] = 20,
+                ["image"] = "rbxassetid://91674719981584"
+            },
+            {
+                ["id"] = "Towers",
+                ["title"] = "Defeat 15 towers!",
+                ["target"] = 15,
+                ["tickets"] = 15,
+                ["image"] = "rbxassetid://97211961212250"
+            },
+            {
+                ["id"] = "UnitsSold",
+                ["title"] = "Sell 5,000 units!",
+                ["target"] = 5000,
+                ["tickets"] = 20,
+                ["image"] = "rbxassetid://104085872137104"
+            }
+        }
+    }
+}
+v1.Periods = v2
+v1.Shop = {
+    {
+        ["name"] = "Lucky Spin",
+        ["amount"] = 1,
+        ["tickets"] = 20
+    },
+    {
+        ["name"] = "Trait Reroll",
+        ["amount"] = 1,
+        ["tickets"] = 1
+    },
+    {
+        ["name"] = "Gems",
+        ["amount"] = 1,
+        ["tickets"] = 1
+    },
+    {
+        ["name"] = "Luck",
+        ["gamepass"] = true,
+        ["tickets"] = 199
+    },
+    {
+        ["name"] = "Ultra Luck",
+        ["gamepass"] = true,
+        ["tickets"] = 599
+    },
+    {
+        ["name"] = "More Cash",
+        ["gamepass"] = true,
+        ["tickets"] = 199
+    },
+    {
+        ["name"] = "Roll Speed",
+        ["gamepass"] = true,
+        ["tickets"] = 499
+    }
+}
+return v1

@@ -1,0 +1,398 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Onboarding.OnboardingController
+-- Took 0.03s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v_u_2 = game:GetService("RunService")
+local v3 = game:GetService("Players")
+local v_u_4 = require(v1.Framework.Features.Data.DataController)
+local v_u_5 = require(v1.Framework.Features.UI.MenuController)
+local v_u_6 = require(v1.Framework.Features.Plot.PlotController)
+local v_u_7 = require(v1.Framework.Features.Inventory.Kinds.Unit.UnitController)
+local v_u_8 = require(v1.Framework.Features.UI.UIReferences)
+local v_u_9 = require(v1.Framework.Features.Plot.PlotConfig)
+local v_u_10 = require(v1.Framework.Features.UI.UIUtil)
+local v_u_11 = require(v1.Packages.Maid)
+local v_u_12 = require(script.Parent.OnboardingConfig)
+local v13 = require(v1.Packages.Network).ClientComm
+local v14 = require(v1.Packages.State)
+local v_u_15 = v3.LocalPlayer
+local v_u_16 = v1.Assets.Onboarding
+local v_u_17 = v_u_8.Root.Onboarding
+local v_u_18 = v_u_17.Instructions
+local v_u_19 = v_u_18.TextLabel
+local v_u_20 = v_u_8.Menus.Backpack
+local v_u_21 = v_u_8.Menus.DiceShop
+local v_u_22 = v_u_8.Root.Rolling
+local v_u_23 = v_u_22.Options.AutoRoll
+local v_u_24 = v_u_22.Options.HiddenRoll
+local v_u_25 = v_u_8.Root.Cutscene
+local v_u_26 = v13.new(v1.Network, false, "OnboardingService"):GetSignal("Advance")
+local v27 = {}
+local v_u_28 = v_u_11.new()
+local v_u_29 = 0
+local v_u_30 = false
+local function v31() -- name: updateInstructionsVisibility
+    -- upvalues: (copy) v_u_22, (copy) v_u_25, (copy) v_u_18, (ref) v_u_30
+    if not (v_u_22.Frame.Visible or (v_u_22.DarkBackground.Visible or v_u_25.BlackBarTop.Visible)) then
+        local _ = v_u_25.BlackBarBottom.Visible
+    end
+    v_u_18.Visible = v_u_30
+end
+local function v_u_33(p32) -- name: isGuiVisible
+    -- upvalues: (copy) v_u_8
+    while p32 and p32 ~= v_u_8.Root do
+        if p32:IsA("GuiObject") and not p32.Visible then
+            return false
+        end
+        p32 = p32.Parent
+    end
+    return true
+end
+local function v_u_41(p_u_34) -- name: showPointer
+    -- upvalues: (copy) v_u_16, (copy) v_u_17, (ref) v_u_28, (copy) v_u_2, (copy) v_u_33, (copy) v_u_10
+    local v_u_35 = v_u_16.Pointer:Clone()
+    v_u_35.AnchorPoint = Vector2.new(0.5, 0)
+    v_u_35.BackgroundTransparency = 1
+    v_u_35.ZIndex = 100
+    v_u_35.Parent = v_u_17
+    v_u_28:Add(v_u_35)
+    v_u_28:Add(v_u_2.RenderStepped:Connect(function()
+        -- upvalues: (copy) p_u_34, (ref) v_u_33, (copy) v_u_35, (ref) v_u_10
+        local v36 = p_u_34()
+        if v36 and v_u_33(v36) then
+            v_u_35.Visible = true
+            local v37 = v_u_10.GetInstanceAbsolutePosition(v36)
+            local v38 = v_u_10.GetInstanceAbsoluteSize(v36)
+            local v39 = os.clock() * 5
+            local v40 = math.sin(v39) * 6
+            v_u_35.Position = UDim2.fromOffset(v37.X.Offset + v38.X.Offset, v37.Y.Offset + v38.Y.Offset / 3 + v40)
+        else
+            v_u_35.Visible = false
+        end
+    end))
+end
+local function v_u_53(p_u_42) -- name: showWorldArrow
+    -- upvalues: (ref) v_u_28, (copy) v_u_2, (copy) v_u_15, (copy) v_u_16
+    local v_u_43 = nil
+    local v_u_44 = nil
+    local v_u_45 = nil
+    local v_u_46 = nil
+    v_u_28:Add(function() -- name: clearArrow
+        -- upvalues: (ref) v_u_43, (ref) v_u_44, (ref) v_u_45, (ref) v_u_46
+        if v_u_43 then
+            v_u_43:Destroy()
+            v_u_43 = nil
+        end
+        if v_u_44 then
+            v_u_44:Destroy()
+            v_u_44 = nil
+        end
+        v_u_45 = nil
+        v_u_46 = nil
+    end)
+    v_u_28:Add(v_u_2.Heartbeat:Connect(function()
+        -- upvalues: (ref) v_u_15, (copy) p_u_42, (ref) v_u_43, (ref) v_u_44, (ref) v_u_45, (ref) v_u_46, (ref) v_u_16
+        local v47 = v_u_15.Character
+        if v47 then
+            v47 = v47:FindFirstChild("HumanoidRootPart")
+        end
+        local v48 = p_u_42()
+        if v47 and (v47:IsA("BasePart") and v48) then
+            if v47 ~= v_u_46 or v48 ~= v_u_45 then
+                if v_u_43 then
+                    v_u_43:Destroy()
+                    v_u_43 = nil
+                end
+                if v_u_44 then
+                    v_u_44:Destroy()
+                    v_u_44 = nil
+                end
+                v_u_45 = nil
+                v_u_46 = nil
+                v_u_46 = v47
+                v_u_45 = v48
+                v_u_43 = v_u_16.ArrowAttachment:Clone()
+                v_u_43.Position = Vector3.new(0, 3, 0)
+                v_u_43.Parent = v47
+                v_u_44 = Instance.new("Attachment")
+                v_u_44.Name = "OnboardingTarget"
+                local v49 = v_u_44
+                local v50 = v48.Size.Y / 2 + 1
+                local v51 = math.min(v50, 4)
+                v49.Position = Vector3.new(0, v51, 0)
+                v_u_44.Parent = v48
+                for _, v52 in v_u_43:GetChildren() do
+                    if v52:IsA("Beam") then
+                        v52.Attachment0 = v_u_44
+                        v52.Attachment1 = v_u_43
+                    end
+                end
+            end
+        else
+            if v_u_43 then
+                v_u_43:Destroy()
+                v_u_43 = nil
+            end
+            if v_u_44 then
+                v_u_44:Destroy()
+                v_u_44 = nil
+            end
+            v_u_45 = nil
+            v_u_46 = nil
+            return
+        end
+    end))
+end
+local function v_u_55() -- name: getInventoryUnit
+    -- upvalues: (copy) v_u_20
+    for _, v54 in v_u_20.Units.ScrollingFrame:GetChildren() do
+        if v54:IsA("GuiButton") then
+            return v54
+        end
+    end
+    return nil
+end
+local function v_u_64(p56, p57) -- name: getSlotPart
+    -- upvalues: (copy) v_u_6, (copy) v_u_4, (copy) v_u_9
+    local v58 = v_u_6.plot
+    if not v58 then
+        return nil
+    end
+    for v59 = 1, 8 do
+        local v60 = v_u_4.Slots[tostring(v59)]()
+        local v61
+        if v60 == nil then
+            v61 = false
+        else
+            v61 = v60.unitId ~= nil
+        end
+        if v_u_9.GetSlotRebirthRequirement(v59) <= v_u_4.Rebirth() and v61 == p56 then
+            local v62 = v58.Slots:FindFirstChild((tostring(v59)))
+            for _, v63 in p57 do
+                if v62 then
+                    v62 = v62:FindFirstChild(v63)
+                end
+            end
+            if v62 and v62:IsA("BasePart") then
+                return v62
+            end
+        end
+    end
+    return nil
+end
+local function v_u_67() -- name: getFirstDiceButton
+    -- upvalues: (copy) v_u_21, (copy) v_u_12
+    local v65 = v_u_21.Content.ScrollingFrame:FindFirstChild(v_u_12.FIRST_DICE)
+    local v66 = v65 and v65:FindFirstChild("Buttons")
+    if v66 then
+        v66 = v65.Buttons:FindFirstChild("Buy")
+    end
+    if v66 and v66:IsA("GuiObject") then
+        return v66
+    else
+        return nil
+    end
+end
+local function v71(p_u_68, p69) -- name: renderStep
+    -- upvalues: (ref) v_u_28, (copy) v_u_11, (ref) v_u_29, (copy) v_u_23, (copy) v_u_22, (copy) v_u_12, (copy) v_u_19, (ref) v_u_30, (copy) v_u_25, (copy) v_u_18, (copy) v_u_41, (copy) v_u_8, (copy) v_u_5, (copy) v_u_20, (copy) v_u_26, (copy) v_u_55, (copy) v_u_7, (copy) v_u_53, (copy) v_u_64, (copy) v_u_21, (copy) v_u_67, (copy) v_u_24
+    v_u_28:Destroy()
+    v_u_28 = v_u_11.new()
+    v_u_29 = p_u_68
+    v_u_23.Visible = p_u_68 >= 12
+    if p_u_68 == 12 or p_u_68 == 13 then
+        v_u_22.Options.Visible = true
+        v_u_28:Add(v_u_22.Options:GetPropertyChangedSignal("Visible"):Connect(function()
+            -- upvalues: (ref) v_u_22
+            if not v_u_22.Options.Visible then
+                v_u_22.Options.Visible = true
+            end
+        end))
+    elseif p69 == 13 then
+        v_u_22.Options.Visible = false
+    end
+    local v70 = v_u_12.STEPS[p_u_68]
+    if v70 then
+        if v70.instruction then
+            v_u_19.Text = v70.instruction
+            v_u_30 = true
+            if not (v_u_22.Frame.Visible or (v_u_22.DarkBackground.Visible or v_u_25.BlackBarTop.Visible)) then
+                local _ = v_u_25.BlackBarBottom.Visible
+            end
+            v_u_18.Visible = v_u_30
+        else
+            v_u_30 = false
+            if not (v_u_22.Frame.Visible or (v_u_22.DarkBackground.Visible or v_u_25.BlackBarTop.Visible)) then
+                local _ = v_u_25.BlackBarBottom.Visible
+            end
+            v_u_18.Visible = v_u_30
+        end
+        if v70.indicator == "Roll" then
+            v_u_41(function()
+                -- upvalues: (ref) v_u_8
+                return v_u_8.HUD.Bottom.Roll
+            end)
+        elseif v70.indicator == "Backpack" then
+            v_u_41(function()
+                -- upvalues: (ref) v_u_8
+                return v_u_8.HUD.Bottom.Backpack
+            end)
+            if v_u_5.ActiveMenu() == v_u_20 then
+                task.defer(function()
+                    -- upvalues: (ref) v_u_26, (copy) p_u_68
+                    v_u_26:Fire(p_u_68)
+                end)
+                return
+            end
+        elseif v70.indicator == "InventoryUnit" then
+            v_u_41(v_u_55)
+            if v_u_7.EquippedUnit() then
+                task.defer(function()
+                    -- upvalues: (ref) v_u_26, (copy) p_u_68
+                    v_u_26:Fire(p_u_68)
+                end)
+                return
+            end
+        else
+            if v70.indicator == "EmptySlot" then
+                v_u_53(function()
+                    -- upvalues: (ref) v_u_64
+                    return v_u_64(false, { "Base", "Spawn" })
+                end)
+                return
+            end
+            if v70.indicator == "CollectionPad" then
+                v_u_53(function()
+                    -- upvalues: (ref) v_u_64
+                    return v_u_64(true, { "Balance", "Main" })
+                end)
+                return
+            end
+            if v70.indicator == "Shop" then
+                v_u_41(function()
+                    -- upvalues: (ref) v_u_8
+                    return v_u_8.HUD.Top.Shop
+                end)
+                return
+            end
+            if v70.indicator == "DiceShop" then
+                v_u_53(function()
+                    return workspace.Zones:WaitForChild("DiceShop")
+                end)
+                if v_u_5.ActiveMenu() == v_u_21 then
+                    task.defer(function()
+                        -- upvalues: (ref) v_u_26, (copy) p_u_68
+                        v_u_26:Fire(p_u_68)
+                    end)
+                    return
+                end
+            else
+                if v70.indicator == "FirstDice" then
+                    v_u_41(v_u_67)
+                    return
+                end
+                if v70.indicator == "CloseDiceShop" then
+                    v_u_41(function()
+                        -- upvalues: (ref) v_u_21
+                        return v_u_21.Design.Banner.ExitButton
+                    end)
+                    return
+                end
+                if v70.indicator == "Home" then
+                    v_u_41(function()
+                        -- upvalues: (ref) v_u_8
+                        return v_u_8.HUD.Top.Home
+                    end)
+                    return
+                end
+                if v70.indicator == "AutoRoll" then
+                    v_u_41(function()
+                        -- upvalues: (ref) v_u_23
+                        return v_u_23
+                    end)
+                    return
+                end
+                if v70.indicator == "HideRoll" then
+                    v_u_41(function()
+                        -- upvalues: (ref) v_u_24
+                        return v_u_24
+                    end)
+                end
+            end
+        end
+    elseif p69 == #v_u_12.STEPS then
+        v_u_19.Text = "Repeat the process and enjoy!"
+        v_u_30 = true
+        if not (v_u_22.Frame.Visible or (v_u_22.DarkBackground.Visible or v_u_25.BlackBarTop.Visible)) then
+            local _ = v_u_25.BlackBarBottom.Visible
+        end
+        v_u_18.Visible = v_u_30
+        task.delay(2, function()
+            -- upvalues: (ref) v_u_29, (ref) v_u_12, (ref) v_u_30, (ref) v_u_22, (ref) v_u_25, (ref) v_u_18
+            if v_u_29 > #v_u_12.STEPS then
+                v_u_30 = false
+                if not (v_u_22.Frame.Visible or (v_u_22.DarkBackground.Visible or v_u_25.BlackBarTop.Visible)) then
+                    local _ = v_u_25.BlackBarBottom.Visible
+                end
+                v_u_18.Visible = v_u_30
+            end
+        end)
+    else
+        v_u_30 = false
+        if not (v_u_22.Frame.Visible or (v_u_22.DarkBackground.Visible or v_u_25.BlackBarTop.Visible)) then
+            local _ = v_u_25.BlackBarBottom.Visible
+        end
+        v_u_18.Visible = v_u_30
+    end
+end
+v_u_5.Opening:Connect(function(p72)
+    -- upvalues: (ref) v_u_29, (copy) v_u_20, (copy) v_u_26, (copy) v_u_21
+    if v_u_29 == 2 and p72 == v_u_20 then
+        v_u_26:Fire(v_u_29)
+    elseif v_u_29 == 7 and p72 == v_u_21 then
+        v_u_26:Fire(v_u_29)
+    end
+end)
+v_u_5.Closed:Connect(function(p73)
+    -- upvalues: (ref) v_u_29, (copy) v_u_21, (copy) v_u_26
+    if v_u_29 == 9 and p73 == v_u_21 then
+        v_u_26:Fire(v_u_29)
+    end
+end)
+v_u_8.HUD.Top.Shop.Activated:Connect(function()
+    -- upvalues: (ref) v_u_29, (copy) v_u_26
+    if v_u_29 == 6 then
+        task.defer(function()
+            -- upvalues: (ref) v_u_26, (ref) v_u_29
+            v_u_26:Fire(v_u_29)
+        end)
+    end
+end)
+v_u_8.HUD.Top.Home.Activated:Connect(function()
+    -- upvalues: (ref) v_u_29, (copy) v_u_26
+    if v_u_29 == 10 then
+        v_u_26:Fire(v_u_29)
+    end
+end)
+v_u_24.Activated:Connect(function()
+    -- upvalues: (ref) v_u_29, (copy) v_u_26
+    if v_u_29 == 13 then
+        v_u_26:Fire(v_u_29)
+    end
+end)
+v14.effect(function()
+    -- upvalues: (copy) v_u_7, (ref) v_u_29, (copy) v_u_26
+    local v74 = v_u_7.EquippedUnit()
+    if v_u_29 == 3 and v74 then
+        v_u_26:Fire(v_u_29)
+    end
+end)
+for _, v75 in {
+    v_u_22.Frame,
+    v_u_22.DarkBackground,
+    v_u_25.BlackBarTop,
+    v_u_25.BlackBarBottom
+} do
+    v75:GetPropertyChangedSignal("Visible"):Connect(v31)
+end
+v_u_4.OnboardingStep.Observe(v71)
+return v27
