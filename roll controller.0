@@ -1,0 +1,450 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Rolling.RollController
+-- Took 0.04s to decompile.
+
+local v_u_1 = game:GetService("ReplicatedStorage")
+local v_u_2 = game:GetService("RunService")
+local v_u_3 = game:GetService("TextChatService")
+local v4 = v_u_1.Packages
+local v_u_5 = require(script.Parent.RollCutscene)
+local v_u_6 = require(v_u_1.Framework.Features.Data.DataController)
+local v_u_7 = require(v_u_1.Framework.Features.Inventory.EntryRegistry)
+require(v_u_1.Framework.Features.Inventory.EntryTypes)
+local v_u_8 = require(v_u_1.Framework.Features.Inventory.Kinds.Unit.Mutations)
+local v_u_9 = require(v_u_1.Framework.Features.Inventory.Kinds.Unit.UnitUtil)
+local v_u_10 = require(v_u_1.Framework.Features.Inventory.Kinds.Spin.SpinController)
+local v11 = require(v_u_1.Framework.Features.UI.UIReferences)
+local v_u_12 = require(v_u_1.Framework.Utils.ViewportUtil)
+local v_u_13 = require(v_u_1.Framework.Features.Rolling.RollUtil)
+local v_u_14 = require(v_u_1.Framework.Utils.AudioUtil)
+local v_u_15 = require(v_u_1.Framework.Features.Buffs.BuffController)
+local v16 = require(v_u_1.Framework.Features.UI.Components.Button)
+local v_u_17 = require(v_u_1.Framework.Features.UI.HUDController)
+local v_u_18 = require(v_u_1.Framework.Features.Upgrades.UpgradeController)
+local v_u_19 = require(v_u_1.Framework.Other.Rarities)
+local v20 = require(v_u_1.Packages.Network).ClientComm
+local v_u_21 = require(v_u_1.Packages.NumberFormatter)
+local v_u_22 = require(v4.Ripple)
+local v23 = require(v4.State)
+local v_u_24 = require(v4.Maid)
+local v_u_25 = v20.new(v_u_1.Network, false, "RollService")
+local v_u_26 = v_u_25:GetSignal("RollMessage")
+local v_u_27 = v_u_25:GetSignal("SetAutoRoll")
+local v_u_28 = v11.Root.Rolling
+local v_u_29 = v_u_28.Frame.RollTemplate
+v_u_29.Visible = false
+local _, v_u_30 = v16.init(v11.Root.HUD.Bottom.Roll)
+local v_u_31 = {
+    1,
+    2,
+    5,
+    8
+}
+local v_u_32 = v_u_28.Frame.Position
+local v_u_33 = v_u_28.Frame.Size
+local v_u_34 = UDim2.new(0.5, 0, 0, 172)
+local v_u_35 = UDim2.new(0, 0, 0, 150)
+local v_u_36 = Random.new()
+local v37 = {}
+local v_u_38 = v23.new(false)
+local v_u_39 = v23.new(false)
+local v_u_40 = v23.new(false)
+local v_u_41 = v23.new(false)
+local v_u_42 = false
+v_u_6.AutoRoll.Observe(v_u_39)
+local function v_u_105(p43, p_u_44, p_u_45, p_u_46, p47) -- name: roll
+    -- upvalues: (copy) v_u_10, (ref) v_u_42, (copy) v_u_40, (copy) v_u_15, (copy) v_u_24, (copy) v_u_29, (copy) v_u_28, (copy) v_u_22, (copy) v_u_2, (copy) v_u_36, (copy) v_u_13, (copy) v_u_14, (copy) v_u_1, (copy) v_u_7, (copy) v_u_31, (copy) v_u_12, (copy) v_u_9, (copy) v_u_8, (copy) v_u_19, (copy) v_u_21, (copy) v_u_41, (copy) v_u_5, (copy) v_u_39
+    if p43 then
+        v_u_10.PlayShower(p47)
+        v_u_42 = true
+        v_u_40(true)
+        local v48 = v_u_15.GetBuff("Roll Duration")
+        local v49 = math.max(v48, 0)
+        local v50 = v49 * 4
+        local v51 = math.round(v50)
+        local v_u_52 = math.clamp(v51, 3, 20)
+        local v53 = v49 * 0.15
+        local v_u_54 = math.min(0.15, v53)
+        local v55 = v49 - v_u_54
+        local v_u_56 = math.max(v55, 0)
+        local v_u_57 = v49 * 0.3333333333333333
+        local v_u_58 = 0
+        local v_u_59 = {}
+        local v_u_60 = false
+        for v_u_61 = 1, p_u_45 do
+            local v_u_62 = p43[v_u_61]
+            if v_u_62 then
+                task.spawn(function()
+                    -- upvalues: (ref) v_u_24, (ref) v_u_29, (copy) v_u_61, (ref) v_u_28, (ref) v_u_22, (ref) v_u_2, (copy) v_u_52, (copy) v_u_62, (copy) p_u_44, (ref) v_u_36, (ref) v_u_13, (ref) v_u_14, (ref) v_u_1, (ref) v_u_7, (ref) v_u_31, (ref) v_u_12, (ref) v_u_9, (ref) v_u_8, (ref) v_u_19, (ref) v_u_21, (copy) p_u_46, (copy) v_u_59, (copy) v_u_54, (copy) v_u_56, (ref) v_u_58, (copy) p_u_45, (ref) v_u_41, (ref) v_u_5, (ref) v_u_57, (ref) v_u_60, (ref) v_u_42, (ref) v_u_39, (ref) v_u_40
+                    local v63 = v_u_24.new()
+                    local v_u_64 = v_u_29:Clone()
+                    v_u_64.LayoutOrder = v_u_61
+                    v_u_64.Visible = true
+                    v_u_64.Parent = v_u_28.Frame
+                    local v65 = v_u_64:QueryDescendants("ViewportFrame")
+                    local v66 = v_u_22.createSpring(1, {
+                        ["frequency"] = 2,
+                        ["dampingRatio"] = 0.6,
+                        ["start"] = true
+                    })
+                    local v67 = v_u_22.createSpring(1, {
+                        ["frequency"] = 2,
+                        ["dampingRatio"] = 0.5,
+                        ["start"] = true
+                    })
+                    local v69 = v66:onChange(function(p68)
+                        -- upvalues: (copy) v_u_64
+                        v_u_64.UIScale.Scale = p68
+                    end)
+                    local v71 = v67:onChange(function(p70)
+                        -- upvalues: (ref) v_u_28
+                        v_u_28.Frame.Right.UIScale.Scale = p70
+                        v_u_28.Frame.Left.UIScale.Scale = p70
+                    end)
+                    local v72 = v_u_22.createSpring(0, {
+                        ["frequency"] = 3.5,
+                        ["dampingRatio"] = 0.4,
+                        ["start"] = true
+                    })
+                    local v73 = v_u_22.createSpring(0.3, {
+                        ["frequency"] = 3,
+                        ["dampingRatio"] = 0.7,
+                        ["start"] = true
+                    })
+                    local v75 = v72:onChange(function(p74)
+                        -- upvalues: (copy) v_u_64
+                        v_u_64.Rotation = p74
+                    end)
+                    local v79 = v73:onChange(function(p76)
+                        -- upvalues: (copy) v_u_64
+                        v_u_64.Glow.ImageTransparency = math.clamp(p76, 0, 1)
+                        local v77 = v_u_64.LightRay
+                        local v78 = p76 + 0.25
+                        v77.ImageTransparency = math.clamp(v78, 0, 1)
+                    end)
+                    v63:Add(v_u_64)
+                    v63:Add(v66)
+                    v63:Add(v67)
+                    v63:Add(v72)
+                    v63:Add(v73)
+                    v63:Add(v69)
+                    v63:Add(v71)
+                    v63:Add(v75)
+                    v63:Add(v79)
+                    local v_u_80 = 260
+                    local v_u_81 = 260
+                    v63:Add(v_u_2.RenderStepped:Connect(function(p82)
+                        -- upvalues: (ref) v_u_80, (ref) v_u_81, (copy) v_u_64
+                        local v83 = v_u_80
+                        local v84 = v_u_81 - v_u_80
+                        local v85 = p82 * 6
+                        v_u_80 = v83 + v84 * math.min(v85, 1)
+                        local v86 = v_u_64.LightRay
+                        v86.Rotation = v86.Rotation + v_u_80 * p82
+                    end))
+                    for v87 = 1, v_u_52 do
+                        local v88 = v_u_24.new()
+                        local v89 = nil
+                        local v90 = nil
+                        if v_u_52 == v87 then
+                            v89 = v_u_62.result
+                            v90 = v_u_62.mutation
+                        else
+                            local v91 = p_u_44
+                            if math.random() < 0.1 then
+                                v91 = v_u_36:NextInteger(p_u_44, p_u_44 * 5000)
+                            end
+                            local v92 = 0
+                            while not v89 do
+                                v89, v90 = v_u_13.RollUnit(v91)
+                                v92 = v92 + 1
+                                if v92 > 100 then
+                                    warn("Failed to roll a unit after 100 tries. This should never happen.")
+                                    break
+                                end
+                            end
+                        end
+                        if v89 then
+                            if v_u_61 == 1 then
+                                v_u_14.play(v_u_1.Assets.Sounds.RollTick)
+                            end
+                            v66:setPosition(0.75)
+                            v66:setGoal(1)
+                            v67:setPosition(1.25)
+                            v67:setGoal(1)
+                            v_u_81 = (1 - v87 / v_u_52) * 100 + 60
+                            v72:setPosition((v87 % 2 == 0 and 1 or -1) * 8 * (1 - (v87 - 1) / v_u_52))
+                            v72:setGoal(0)
+                            v73:setPosition(0.08)
+                            v73:setGoal(0.3)
+                            local v93 = v_u_7.getEntryConfig(v89)
+                            local v94 = v_u_31[math.random(1, #v_u_31)]
+                            for _, v95 in pairs(v65) do
+                                local v96 = v93.model()
+                                v_u_12.ApplyModelToViewport(v95, v96, {
+                                    ["offset"] = CFrame.new(0, 1, -1)
+                                })
+                                v_u_9.PlayAnimation(v96, v94).TimePosition = 0.5
+                                if v87 < v_u_52 then
+                                    v88:Add(v96)
+                                end
+                            end
+                            v_u_64.Title.Text = v89
+                            if v90 then
+                                local v97 = v_u_8[v90]
+                                v_u_64.Mutation.Image = v97.image
+                                v_u_64.Mutation.Visible = true
+                            else
+                                v_u_64.Mutation.Visible = false
+                                v_u_64.Title.UIGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+                            end
+                            local v98 = v93.chance
+                            local v99 = assert(v98)({
+                                ["mutation"] = v90
+                            })
+                            local v100 = v_u_19.Get(v93.getRarity({
+                                ["mutation"] = v90
+                            }))
+                            v_u_64.Chance.Text = "1 in " .. v_u_21.FormatCompact(v99, 2)
+                            v_u_64.Chance.UIGradient.Color = v100.gradient
+                            v_u_64.Glow.UIGradient.Color = v100.gradient
+                            v_u_64.LightRay.UIGradient.Color = v100.gradient
+                            if v_u_52 == v87 and (p_u_46 or v99 / p_u_44 >= 200) then
+                                v_u_59[v_u_61] = {
+                                    ["gradient"] = v93.gradient,
+                                    ["chance"] = v99,
+                                    ["model"] = v93.model
+                                }
+                            end
+                            if v87 == 1 then
+                                task.wait(v_u_54)
+                            end
+                            local v101 = v_u_52
+                            local v102 = v_u_56
+                            task.wait(v102 * (v87 / v101) ^ 2 - v102 * ((v87 - 1) / v101) ^ 2)
+                            v88:Destroy()
+                        end
+                    end
+                    v_u_58 = v_u_58 + 1
+                    if v_u_61 == 1 then
+                        while v_u_58 < p_u_45 do
+                            task.wait()
+                        end
+                        if next(v_u_59) then
+                            v_u_41(true)
+                            for v103 = 1, p_u_45 do
+                                local v104 = v_u_59[v103]
+                                if v104 then
+                                    v_u_5(v104.gradient, v104.chance, v104.model())
+                                end
+                            end
+                            v_u_41(false)
+                            v_u_57 = v_u_57 + 0.5
+                            v_u_14.play(v_u_1.Assets.Sounds.RareRoll)
+                        end
+                        v_u_60 = true
+                    else
+                        while not v_u_60 do
+                            task.wait()
+                        end
+                    end
+                    v_u_80 = 400
+                    v_u_81 = 30
+                    v66:setPosition(1.5)
+                    v66:setGoal(1)
+                    v67:setPosition(1.6)
+                    v67:setGoal(1)
+                    v72:setPosition(0)
+                    v72:setGoal(0)
+                    v73:setPosition(-0.15)
+                    v73:setGoal(0.3)
+                    if v_u_61 == 1 then
+                        v_u_14.play(v_u_1.Assets.Sounds.RollTick)
+                    end
+                    task.wait(v_u_57)
+                    v63:Destroy()
+                    if v_u_61 == 1 then
+                        v_u_42 = false
+                        if not v_u_39() then
+                            v_u_40(false)
+                        end
+                    end
+                end)
+            end
+        end
+    end
+end
+local v_u_106 = v_u_22.createSpring(0, {
+    ["frequency"] = 2.5,
+    ["dampingRatio"] = 1,
+    ["start"] = true
+})
+local v_u_107 = v_u_22.createSpring(1, {
+    ["frequency"] = 1.55,
+    ["dampingRatio"] = 1,
+    ["start"] = true
+})
+v_u_106:onChange(function(p108)
+    -- upvalues: (copy) v_u_28
+    v_u_28.Frame.UIScale.Scale = p108
+end)
+v_u_107:onChange(function(p109)
+    -- upvalues: (copy) v_u_28
+    v_u_28.DarkBackground.BackgroundTransparency = p109
+end)
+v_u_106:onComplete(function(p110)
+    -- upvalues: (copy) v_u_28
+    if p110 == 0 then
+        v_u_28.Frame.Visible = false
+    end
+end)
+v_u_107:onComplete(function(p111)
+    -- upvalues: (copy) v_u_28
+    if p111 == 1 then
+        v_u_28.DarkBackground.Visible = false
+    end
+end)
+v_u_28.Frame.UIScale.Scale = 0
+v_u_28.DarkBackground.BackgroundTransparency = 1
+v23.effect(function()
+    -- upvalues: (copy) v_u_41, (copy) v_u_28, (copy) v_u_17, (copy) v_u_40, (copy) v_u_18, (copy) v_u_106, (copy) v_u_38, (copy) v_u_107
+    if v_u_41() then
+        v_u_28.Frame.Visible = false
+        v_u_28.DarkBackground.Visible = false
+        v_u_28.Options.Visible = false
+        v_u_17.hideAll("rolling")
+        return
+    elseif v_u_40() then
+        if v_u_18.Open() then
+            v_u_28.Frame.Visible = false
+            return
+        else
+            v_u_28.Frame.Visible = true
+            v_u_106:setGoal(1)
+            if v_u_38() then
+                v_u_107:setGoal(1)
+                v_u_28.Options.Visible = false
+                v_u_17.showAll("rolling")
+            else
+                v_u_28.DarkBackground.Visible = true
+                v_u_28.Options.Visible = true
+                v_u_107:setGoal(0.5)
+                v_u_17.hideAll("rolling")
+            end
+        end
+    else
+        v_u_106:setPosition(0)
+        v_u_106:setGoal(0)
+        v_u_107:setGoal(1)
+        v_u_28.Options.Visible = false
+        v_u_17.showAll("rolling")
+        return
+    end
+end)
+local _, v_u_112 = v16.init(v_u_28.Options.AutoRoll)
+local _, v_u_113 = v16.init(v_u_28.Options.HiddenRoll)
+local v_u_114 = v_u_22.createSpring(v_u_32, {
+    ["frequency"] = 2,
+    ["dampingRatio"] = 0.7,
+    ["start"] = true
+})
+local v_u_115 = v_u_22.createSpring(v_u_33, {
+    ["frequency"] = 2,
+    ["dampingRatio"] = 0.7,
+    ["start"] = true
+})
+v_u_114:onChange(function(p116)
+    -- upvalues: (copy) v_u_28
+    v_u_28.Frame.Position = p116
+end)
+v_u_115:onChange(function(p117)
+    -- upvalues: (copy) v_u_28
+    v_u_28.Frame.Size = p117
+end)
+local function v_u_118()
+    -- upvalues: (ref) v_u_42, (copy) v_u_105, (copy) v_u_25
+    while task.wait(0.1) do
+        if not v_u_42 then
+            v_u_105(v_u_25:GetFunction("RollDice")())
+        end
+    end
+end
+local v_u_119 = nil
+local v_u_120 = nil
+v23.effect(function()
+    -- upvalues: (copy) v_u_38, (copy) v_u_114, (copy) v_u_34, (copy) v_u_115, (copy) v_u_35, (copy) v_u_32, (copy) v_u_33, (copy) v_u_39, (copy) v_u_30, (copy) v_u_113, (ref) v_u_119, (copy) v_u_118, (ref) v_u_120, (copy) v_u_2, (copy) v_u_112, (ref) v_u_42, (copy) v_u_40
+    if v_u_38() then
+        v_u_114:setGoal(v_u_34)
+        v_u_115:setGoal(v_u_35)
+    else
+        v_u_114:setGoal(v_u_32)
+        v_u_115:setGoal(v_u_33)
+    end
+    if v_u_39() then
+        v_u_30.Rotating.Visible = true
+        v_u_30.Dice.UIGradient.Color = ColorSequence.new(Color3.fromRGB(130, 130, 130))
+        v_u_113.Visible = true
+        if not v_u_119 then
+            v_u_119 = task.spawn(v_u_118)
+        end
+        if not v_u_120 then
+            v_u_120 = v_u_2.RenderStepped:Connect(function(p121)
+                -- upvalues: (ref) v_u_30, (ref) v_u_112
+                local v122 = v_u_30.Rotating
+                v122.Rotation = v122.Rotation + 100 * p121
+                local v123 = v_u_112.ImageLabel
+                v123.Rotation = v123.Rotation + 100 * p121
+            end)
+            return
+        end
+    else
+        v_u_30.Rotating.Visible = false
+        v_u_30.Dice.UIGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+        v_u_113.Visible = false
+        if v_u_119 then
+            task.cancel(v_u_119)
+            v_u_119 = nil
+        end
+        if v_u_120 then
+            v_u_120:Disconnect()
+            v_u_120 = nil
+        end
+        if not v_u_42 then
+            v_u_40(false)
+        end
+    end
+end)
+v_u_113.Activated:Connect(function()
+    -- upvalues: (copy) v_u_38
+    v_u_38(not v_u_38())
+end)
+v_u_112.Activated:Connect(function()
+    -- upvalues: (copy) v_u_27, (copy) v_u_6
+    v_u_27:Fire(not v_u_6.AutoRoll())
+end)
+v_u_30.Activated:Connect(function()
+    -- upvalues: (copy) v_u_38, (copy) v_u_40, (copy) v_u_105, (copy) v_u_25
+    if v_u_38() then
+        v_u_38(false)
+        return
+    elseif not v_u_40() then
+        v_u_105(v_u_25:GetFunction("RollDice")())
+    end
+end)
+task.spawn(function()
+    -- upvalues: (copy) v_u_3, (copy) v_u_26
+    local v124 = v_u_3:WaitForChild("TextChannels")
+    local v_u_125 = v124:WaitForChild("RBXGeneral")
+    local v_u_126 = v124:WaitForChild("Global")
+    v_u_26:Connect(function(p127)
+        -- upvalues: (copy) v_u_126, (copy) v_u_125
+        local v128
+        if p127.tag == "GLOBAL" then
+            v128 = v_u_126
+        else
+            v128 = v_u_125
+        end
+        v128:DisplaySystemMessage((("<font color=\"%*\">[%*]</font> <font color=\"#FFFFFF\">%*</font>"):format(p127.tagColor, p127.tag, p127.message)))
+    end)
+end)
+v37.RollState = v_u_40
+return v37

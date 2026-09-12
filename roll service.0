@@ -1,0 +1,191 @@
+-- Script Path: game:GetService("ReplicatedStorage").Framework.Features.Rolling.RollService
+-- Took 0.02s to decompile.
+
+local v1 = game:GetService("ReplicatedStorage")
+local v_u_2 = game:GetService("MessagingService")
+local v3 = game:GetService("Players")
+local v4 = game:GetService("TextChatService")
+local v_u_5 = require(v1.Framework.Features.Notifications.NotificationService)
+local v_u_6 = require(v1.Packages.NumberFormatter)
+local v_u_7 = require(v1.Framework.Features.Inventory.EntryRegistry)
+local v_u_8 = require(v1.Framework.Features.Inventory.EntryService)
+local v_u_9 = require(v1.Framework.Features.Index.IndexService)
+local v_u_10 = require(v1.Framework.Features.Buffs.BuffService)
+local v_u_11 = require(v1.Framework.Features.Data.DataService)
+local v_u_12 = require(v1.Framework.Features.Selling.SellService)
+require(v1.Framework.Features.Inventory.EntryTypes)
+require(v1.Framework.Features.Inventory.Kinds.Unit.UnitUtil)
+local v_u_13 = require(v1.Framework.Features.Quests.QuestService)
+local v_u_14 = require(script.Parent.RollUtil)
+local v_u_15 = require(script.Parent.Dice)
+local v16 = require(v1.Packages.Network).ServerComm.new(v1.Network, script.Name)
+local v_u_17 = v16:CreateSignal("RollMessage")
+local v18 = v16:CreateSignal("SetAutoRoll")
+local v_u_19 = Instance.new("TextChannel")
+v_u_19.Name = "Global"
+function v_u_19.ShouldDeliverCallback()
+    return false
+end
+v_u_19.Parent = v4:WaitForChild("TextChannels")
+local function v23(p20) -- name: addToGlobalChannel
+    -- upvalues: (copy) v_u_19
+    local v21, v22 = pcall(v_u_19.AddUserAsync, v_u_19, p20.UserId)
+    if v21 then
+        if v22 then
+            v22.CanSend = false
+        end
+    else
+        warn("Failed to add player to Global roll channel:", v22)
+    end
+end
+v3.PlayerAdded:Connect(v23)
+for _, v24 in v3:GetPlayers() do
+    task.spawn(v23, v24)
+end
+local v_u_25 = {}
+local function v_u_36(p26, p27, p28, p29, p30) -- name: announceRoll
+    -- upvalues: (copy) v_u_6, (copy) v_u_17, (copy) v_u_2
+    local v31 = p29 / p30
+    if v31 >= 1000 then
+        if p28 then
+            p27 = p28 .. " " .. p27
+        end
+        local v32 = ("%* has rolled a <b>%*</b> with a <b>1 in %*</b> chance!"):format(p26.Name, p27, (v_u_6.FormatInt(p29)))
+        local v_u_33 = {
+            ["tag"] = v31 >= 50000 and "GLOBAL" or "SERVER",
+            ["tagColor"] = v31 >= 50000 and "#FF55D7" or "#55AAFF",
+            ["message"] = v32,
+            ["sourceJobId"] = game.JobId
+        }
+        v_u_17:FireAll(v_u_33)
+        if v31 >= 50000 then
+            task.spawn(function()
+                -- upvalues: (ref) v_u_2, (copy) v_u_33
+                local v34, v35 = pcall(v_u_2.PublishAsync, v_u_2, "GlobalRollMessages", v_u_33)
+                if not v34 then
+                    warn("Failed to publish global roll message:", v35)
+                end
+            end)
+        end
+    end
+end
+task.spawn(function()
+    -- upvalues: (copy) v_u_2, (copy) v_u_17
+    local v39, v40 = pcall(function()
+        -- upvalues: (ref) v_u_2, (ref) v_u_17
+        v_u_2:SubscribeAsync("GlobalRollMessages", function(p37)
+            -- upvalues: (ref) v_u_17
+            local v38 = p37.Data
+            if type(v38) == "table" and v38.sourceJobId ~= game.JobId then
+                v_u_17:FireAll(v38)
+            end
+        end)
+    end)
+    if not v39 then
+        warn("Failed to subscribe to global roll messages:", v40)
+    end
+end)
+v18:Connect(function(p41, p42)
+    -- upvalues: (copy) v_u_11
+    if type(p42) == "boolean" then
+        local v43 = v_u_11[p41]
+        if v43 then
+            v43.AutoRoll(p42)
+        end
+    end
+end)
+v16:BindFunction("RollDice", function(p_u_44)
+    -- upvalues: (copy) v_u_25, (copy) v_u_10, (copy) v_u_11, (copy) v_u_15, (copy) v_u_7, (copy) v_u_5, (copy) v_u_14, (copy) v_u_8, (copy) v_u_9, (copy) v_u_12, (copy) v_u_36, (copy) v_u_13
+    if v_u_25[p_u_44] then
+        return
+    end
+    v_u_25[p_u_44] = true
+    local v45 = v_u_10.GetBuff(p_u_44, "Roll Duration")
+    task.delay(v45, function()
+        -- upvalues: (ref) v_u_25, (copy) p_u_44
+        v_u_25[p_u_44] = nil
+    end)
+    local v46 = v_u_11[p_u_44]
+    local v47 = v_u_15.Get(v46.Dice())
+    if not v47 then
+        return
+    end
+    local v48 = 0
+    for _, v49 in v46.Inventory() do
+        local v50 = v_u_7.getEntryConfig(v49.name)
+        if v50 and v50.kind == "Unit" then
+            v48 = v48 + 1
+        end
+    end
+    local v51 = v_u_10.GetBuff(p_u_44, "Rolls")
+    if v_u_10.GetBuff(p_u_44, "Unit Storage") + (v51 - 1) <= v48 then
+        v_u_5.SendTextNotification(p_u_44, {
+            ["message"] = "Your unit inventory is full, sell some units!",
+            ["notificationType"] = "error"
+        })
+        return
+    end
+    local v52 = nil
+    local v53 = 1
+    local v54 = nil
+    for v55, v56 in v46.ActiveEntries() do
+        local v57 = v_u_7.getEntryConfig(v56.name)
+        if v57 and v57.kind == "Spin" then
+            v52 = v56.name
+            v53 = v57.luckMultiplier
+            v51 = 1
+            v54 = true
+            local v58 = v56.amount or 1
+            if v58 > 1 then
+                v46.ActiveEntries[v55].amount(v58 - 1)
+            else
+                v46.ActiveEntries[v55](nil)
+            end
+            break
+        end
+    end
+    local v_u_59 = v47.luck * v_u_10.GetBuff(p_u_44, "Luck")
+    local v60 = v_u_59 * v53
+    if v46.Rolls() == 4 then
+        v51 = 1
+        v_u_59 = 1
+        v60 = 50
+        v54 = true
+    end
+    local v61 = {}
+    for _ = 1, v51 do
+        local v_u_62, v_u_63 = v_u_14.RollUnit(v60)
+        table.insert(v61, {
+            ["result"] = v_u_62,
+            ["mutation"] = v_u_63
+        })
+        local v64 = v_u_7.expectEntryConfig(v_u_62).chance
+        local v_u_65 = assert(v64)({
+            ["mutation"] = v_u_63
+        })
+        task.delay(v45 + v45 / 3, function()
+            -- upvalues: (ref) v_u_11, (copy) p_u_44, (ref) v_u_8, (copy) v_u_62, (copy) v_u_63, (ref) v_u_9, (copy) v_u_65, (ref) v_u_12, (ref) v_u_36, (ref) v_u_59
+            if v_u_11[p_u_44] then
+                local v66 = {
+                    ["mutation"] = v_u_63 or nil
+                }
+                local v67 = v_u_8.Give(p_u_44, v_u_62, 1, v66)
+                if v67 then
+                    v_u_9.Discover(p_u_44, v_u_62, v_u_63)
+                    if v_u_11[p_u_44].AutoSell() > 0 and (v_u_65 < v_u_11[p_u_44].AutoSell() and v_u_11[p_u_44].Inventory[v67]()) then
+                        v_u_12.Sell(p_u_44, { v67 }, true)
+                    end
+                    v_u_36(p_u_44, v_u_62, v_u_63, v_u_65, v_u_59)
+                end
+            else
+                return
+            end
+        end)
+    end
+    v46.Rolls(function(p68)
+        return p68 + 1
+    end)
+    v_u_13.AddProgress(p_u_44, "Rolls", 1)
+    return v61, v60, v51, v54, v52
+end)
+return {}
