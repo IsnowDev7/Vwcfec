@@ -1,0 +1,2039 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- Clean up previous instances
+if getgenv()._FlyCleanUp then
+    pcall(getgenv()._FlyCleanUp)
+end
+if getgenv()._FlyToggleGui then
+    pcall(function() getgenv()._FlyToggleGui:Destroy() end)
+end
+
+-- Catalogs & Settings
+local AreasModule = require(ReplicatedStorage.Settings.Areas)
+local EggsModule = require(ReplicatedStorage.Settings.Eggs)
+local FossilEventSettings = require(ReplicatedStorage.Settings.FossilEvent)
+local GiftingSettings = require(ReplicatedStorage.Settings.Gifting)
+
+-- Remotes
+local SquatTrainingRemote = ReplicatedStorage.Remotes:FindFirstChild("SquatTrainingRequest")
+local StopSquattingRemote = ReplicatedStorage.Remotes:FindFirstChild("StopSquattingRequest")
+local SquatBonusRemote = ReplicatedStorage.Remotes:FindFirstChild("SquatBonusRequest")
+local FossilRemote = ReplicatedStorage.Remotes:FindFirstChild("Fossil")
+local ReturnToBaseRemote = ReplicatedStorage.Remotes:FindFirstChild("ReturnToBaseRequest")
+local GiftRemote = ReplicatedStorage.Remotes:FindFirstChild("Gift")
+local WheelspinRemote = ReplicatedStorage.Remotes:FindFirstChild("Wheelspin")
+local CodesRemote = ReplicatedStorage.Remotes:FindFirstChild("Codes")
+local OfflineRewardsRemote = ReplicatedStorage.Remotes:FindFirstChild("OfflineRewards")
+local ClaimIndexRemote = ReplicatedStorage.Remotes:FindFirstChild("ClaimAnimalIndexReward")
+local SlapRemote = ReplicatedStorage.Remotes:FindFirstChild("SlapHand")
+local CoilsRemote = ReplicatedStorage.Remotes:FindFirstChild("Coils")
+local PlaceEggRemote = ReplicatedStorage.Remotes:FindFirstChild("PlaceEggRequest")
+
+-- Exclusive Eggs List
+local ExclusiveEggsList = {
+    "Evil Egg",
+    "Admin Egg",
+    "Void Egg",
+    "Skull Egg",
+    "Frozen Egg",
+    "Festival Egg",
+    "Wintrs Egg",
+    "Fossil Egg"
+}
+
+local ZoneList = {}
+for _, area in ipairs(AreasModule.List) do
+    table.insert(ZoneList, area.Name)
+end
+
+local allEggsSet = {}
+for eggName, _ in pairs(EggsModule.List) do
+    allEggsSet[eggName] = true
+end
+for _, ex in ipairs(ExclusiveEggsList) do
+    allEggsSet[ex] = true
+end
+
+local AllEggsSorted = {}
+for eggName, _ in pairs(allEggsSet) do
+    table.insert(AllEggsSorted, eggName)
+end
+table.sort(AllEggsSorted)
+
+-- State Variables
+local SelectedZones = {}
+local SelectedEggs = {}
+local TargetExclusives = false
+local AutoCollectEggs = false
+local EggLoopThread = nil
+
+local AutoFarmFossils = false
+local AutoCleanBones = true
+local PrioritizeBetterBones = true
+local FossilLoopThread = nil
+
+local AutoTrain = false
+local AutoHitBonus = true
+local TrainLoopThread = nil
+local BonusConnection = nil
+
+-- Movement Modifiers
+local SpeedEnabled = false
+local JumpEnabled = false
+local SpeedMultiplier = 2
+local JumpMultiplier = 2
+local BaseWalkSpeed = 16
+local BaseJumpPower = 50
+
+-- Extras & Keybinds
+local AntiAfkEnabled = true
+local AntiAfkConnection = nil
+local MenuToggleKey = Enum.KeyCode.RightControl
+local KeybindConnection = nil
+
+-- Dupe Loop State
+local AutoDupeLoop = false
+local DupeThread = nil
+local TargetPlayerName = ""
+
+-- Freebies & Auto Claims State
+local AutoSpinWheel = false
+local WheelspinThread = nil
+local AutoClaimOffline = false
+local OfflineThread = nil
+local AutoClaimIndex = false
+local IndexThread = nil
+
+-- Automation & Progression State
+local AutoUpgrades = false
+local UpgradesThread = nil
+local AutoBuyFossilEggs = false
+local FossilEggBuyThread = nil
+local AutoPlaceCarriedEggs = false
+local EggPlaceThread = nil
+
+-- Combat & Protection State
+local SlapAuraEnabled = false
+local SlapAuraThread = nil
+local SlapAuraRange = 12
+local AntiSlapRagdoll = false
+local AntiSlapConnection = nil
+
+-- ESP State & Cache
+local PlayerEspEnabled = false
+local EggEspEnabled = false
+local BoneEspEnabled = false
+local ActiveHighlights = {} -- Instance -> Highlight
+
+local function clearHighlights()
+    for inst, hl in pairs(ActiveHighlights) do
+        if hl and hl.Parent then
+            hl:Destroy()
+        end
+    end
+    table.clear(ActiveHighlights)
+end
+
+local function applyHighlight(inst, color, fillTrans, outlineTrans)
+    if not inst or not inst.Parent then return end
+    local existing = ActiveHighlights[inst] or inst:FindFirstChild("GoonysHighlight")
+    if not existing then
+        local hl = Instance.new("Highlight")
+        hl.Name = "GoonysHighlight"
+        hl.FillColor = color
+        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+        hl.FillTransparency = fillTrans or 0.4
+        hl.OutlineTransparency = outlineTrans or 0.1
+        hl.Adornee = inst
+        hl.Parent = inst
+        ActiveHighlights[inst] = hl
+    else
+        existing.FillColor = color
+        existing.Enabled = true
+        ActiveHighlights[inst] = existing
+    end
+end
+
+local function removeHighlight(inst)
+    local hl = ActiveHighlights[inst] or (inst and inst:FindFirstChild("GoonysHighlight"))
+    if hl then
+        hl:Destroy()
+        ActiveHighlights[inst] = nil
+    end
+end
+
+-- ESP Update Loop
+local function updateESP()
+    -- 1. Player ESP
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            if PlayerEspEnabled then
+                applyHighlight(p.Character, Color3.fromRGB(255, 50, 50), 0.5, 0)
+            else
+                removeHighlight(p.Character)
+            end
+        end
+    end
+
+    -- 2. Egg ESP
+    local stages = Workspace.Map:FindFirstChild("Stages")
+    if stages then
+        for _, stage in ipairs(stages:GetChildren()) do
+            local spawned = stage:FindFirstChild("SpawnedEggs")
+            if spawned then
+                for _, egg in ipairs(spawned:GetChildren()) do
+                    if EggEspEnabled then
+                        applyHighlight(egg, Color3.fromRGB(255, 215, 0), 0.4, 0)
+                    else
+                        removeHighlight(egg)
+                    end
+                end
+            end
+        end
+    end
+
+    -- 3. Dino Bone / Fossil ESP
+    if stages then
+        for _, stage in ipairs(stages:GetChildren()) do
+            local spawned = stage:FindFirstChild("SpawnedFossils")
+            if spawned then
+                for _, fossil in ipairs(spawned:GetChildren()) do
+                    if BoneEspEnabled then
+                        applyHighlight(fossil, Color3.fromRGB(0, 220, 255), 0.35, 0)
+                    else
+                        removeHighlight(fossil)
+                    end
+                end
+            end
+        end
+    end
+
+    local adminFossils = Workspace:FindFirstChild("AdminFossils")
+    if adminFossils then
+        for _, f in ipairs(adminFossils:GetChildren()) do
+            if BoneEspEnabled then
+                applyHighlight(f, Color3.fromRGB(0, 220, 255), 0.35, 0)
+            else
+                removeHighlight(f)
+            end
+        end
+    end
+end
+
+local espStep = RunService.Heartbeat:Connect(function()
+    if PlayerEspEnabled or EggEspEnabled or BoneEspEnabled then
+        updateESP()
+    end
+end)
+
+-- Instant Teleport Function
+local function instantTeleport(targetCF)
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    root.CFrame = targetCF
+end
+
+-- Smooth Interaction Trigger
+local function triggerPrompt(prompt)
+    if not prompt or not prompt.Parent then return false end
+    if typeof(fireproximityprompt) == "function" then
+        fireproximityprompt(prompt)
+        return true
+    else
+        prompt:InputHoldBegin()
+        task.wait(prompt.HoldDuration + 0.05)
+        prompt:InputHoldEnd()
+        return true
+    end
+end
+
+-- Load WindUI
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Goonys menu",
+    Icon = "gamepad-2",
+    Author = "Full Feature Hub",
+    Folder = "GoonysMenuConfig",
+    Size = UDim2.fromOffset(590, 520),
+    Transparent = true,
+    Theme = "Dark",
+    Resizable = true,
+    OpenButton = {
+        Enabled = false
+    }
+})
+
+-- ==================== TABS ====================
+local MovementTab = Window:Tab({
+    Title = "Movement",
+    Icon = "navigation",
+})
+
+local TrainingTab = Window:Tab({
+    Title = "Training",
+    Icon = "dumbbell",
+})
+
+local EggTab = Window:Tab({
+    Title = "Egg Farm",
+    Icon = "egg",
+})
+
+local DinoTab = Window:Tab({
+    Title = "Dino Bones",
+    Icon = "bone",
+})
+
+local EspTab = Window:Tab({
+    Title = "ESP / Visuals",
+    Icon = "eye",
+})
+
+local ExclusiveTab = Window:Tab({
+    Title = "Exclusives & Events",
+    Icon = "flame",
+})
+
+local DupeTab = Window:Tab({
+    Title = "Dupe / Gifting",
+    Icon = "copy",
+})
+
+local ClaimsTab = Window:Tab({
+    Title = "Auto Claims",
+    Icon = "gift",
+})
+
+local ProgressionTab = Window:Tab({
+    Title = "Upgrades & Base",
+    Icon = "trending-up",
+})
+
+local CombatTab = Window:Tab({
+    Title = "Combat & Aura",
+    Icon = "sword",
+})
+
+local ExtrasTab = Window:Tab({
+    Title = "Extras",
+    Icon = "settings",
+})
+
+-- ==================== SMOOTH FLIGHT & MOVEMENT LOGIC ====================
+local Flying = false
+local FlySpeed = 60
+local BodyGyro, BodyVelocity
+local FlyConnection
+
+local function stopFlying()
+    if FlyConnection then
+        FlyConnection:Disconnect()
+        FlyConnection = nil
+    end
+    if BodyGyro then
+        BodyGyro:Destroy()
+        BodyGyro = nil
+    end
+    if BodyVelocity then
+        BodyVelocity:Destroy()
+        BodyVelocity = nil
+    end
+
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = false
+        end
+    end
+end
+
+local function startFlying()
+    stopFlying()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not rootPart or not humanoid then return end
+
+    humanoid.PlatformStand = true
+
+    BodyGyro = Instance.new("BodyGyro")
+    BodyGyro.P = 150000
+    BodyGyro.D = 800
+    BodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    BodyGyro.CFrame = rootPart.CFrame
+    BodyGyro.Parent = rootPart
+
+    BodyVelocity = Instance.new("BodyVelocity")
+    BodyVelocity.Velocity = Vector3.zero
+    BodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    BodyVelocity.Parent = rootPart
+
+    local currentVelocity = Vector3.zero
+
+    FlyConnection = RunService.RenderStepped:Connect(function(deltaTime)
+        if not Flying or not character.Parent or not rootPart.Parent or not humanoid.Parent then
+            stopFlying()
+            return
+        end
+
+        local camCFrame = Camera.CFrame
+        local targetCFrame = CFrame.new(rootPart.Position, rootPart.Position + camCFrame.LookVector)
+        BodyGyro.CFrame = BodyGyro.CFrame:Lerp(targetCFrame, math.clamp(deltaTime * 18, 0, 1))
+
+        local rawDirection = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            rawDirection = rawDirection + camCFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            rawDirection = rawDirection - camCFrame.LookVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            rawDirection = rawDirection - camCFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            rawDirection = rawDirection + camCFrame.RightVector
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            rawDirection = rawDirection + Vector3.new(0, 1, 0)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            rawDirection = rawDirection - Vector3.new(0, 1, 0)
+        end
+
+        local targetVelocity = Vector3.zero
+        if rawDirection.Magnitude > 0 then
+            targetVelocity = rawDirection.Unit * FlySpeed
+        end
+
+        currentVelocity = currentVelocity:Lerp(targetVelocity, math.clamp(deltaTime * 12, 0, 1))
+        BodyVelocity.Velocity = currentVelocity
+    end)
+end
+
+local function applySpeedAndJump()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        if SpeedEnabled then
+            hum.WalkSpeed = BaseWalkSpeed * SpeedMultiplier
+        else
+            hum.WalkSpeed = BaseWalkSpeed
+        end
+
+        if JumpEnabled then
+            hum.UseJumpPower = true
+            hum.JumpPower = BaseJumpPower * JumpMultiplier
+        else
+            hum.UseJumpPower = true
+            hum.JumpPower = BaseJumpPower
+        end
+    end
+end
+
+local movementStep = RunService.Heartbeat:Connect(function()
+    if not Flying then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Health > 0 then
+            local desiredSpeed = SpeedEnabled and (BaseWalkSpeed * SpeedMultiplier) or BaseWalkSpeed
+            local desiredJump = JumpEnabled and (BaseJumpPower * JumpMultiplier) or BaseJumpPower
+
+            if hum.WalkSpeed ~= desiredSpeed then
+                hum.WalkSpeed = desiredSpeed
+            end
+            if hum.JumpPower ~= desiredJump then
+                hum.UseJumpPower = true
+                hum.JumpPower = desiredJump
+            end
+        end
+    end
+end)
+
+MovementTab:Toggle({
+    Title = "Enable Fly",
+    Desc = "Smooth flight following camera/shiftlock (WASD + Space/Shift)",
+    Value = false,
+    Callback = function(state)
+        Flying = state
+        if Flying then
+            startFlying()
+        else
+            stopFlying()
+            applySpeedAndJump()
+        end
+    end
+})
+
+MovementTab:Slider({
+    Title = "Fly Speed",
+    Desc = "Adjust flight velocity",
+    Value = {
+        Min = 10,
+        Max = 300,
+        Default = 60
+    },
+    Step = 5,
+    Callback = function(val)
+        FlySpeed = val
+    end
+})
+
+MovementTab:Toggle({
+    Title = "Speed Boost Toggle",
+    Desc = "Enable speed multiplier (off returns walk speed to normal 16)",
+    Value = false,
+    Callback = function(state)
+        SpeedEnabled = state
+        applySpeedAndJump()
+    end
+})
+
+MovementTab:Slider({
+    Title = "Speed Multiplier",
+    Desc = "Walk/run multiplier when Speed Boost is ON",
+    Value = {
+        Min = 1,
+        Max = 5,
+        Default = 2
+    },
+    Step = 0.25,
+    Callback = function(val)
+        SpeedMultiplier = val
+        if SpeedEnabled then
+            applySpeedAndJump()
+        end
+    end
+})
+
+MovementTab:Toggle({
+    Title = "Jump Boost Toggle",
+    Desc = "Enable jump multiplier (off returns jump power to normal 50)",
+    Value = false,
+    Callback = function(state)
+        JumpEnabled = state
+        applySpeedAndJump()
+    end
+})
+
+MovementTab:Slider({
+    Title = "Jump Multiplier",
+    Desc = "Jump power multiplier when Jump Boost is ON",
+    Value = {
+        Min = 1,
+        Max = 5,
+        Default = 2
+    },
+    Step = 0.25,
+    Callback = function(val)
+        JumpMultiplier = val
+        if JumpEnabled then
+            applySpeedAndJump()
+        end
+    end
+})
+
+-- ==================== BASE & TELEPORT LOGIC ====================
+local function getPlayerPlot()
+    local plots = Workspace.Map:FindFirstChild("Plots")
+    if plots then
+        for _, plot in ipairs(plots:GetChildren()) do
+            local owner = plot:FindFirstChild("Owner")
+            if owner and (tostring(owner.Value) == LocalPlayer.Name or tostring(owner.Value) == tostring(LocalPlayer.UserId)) then
+                return plot
+            end
+        end
+    end
+    return nil
+end
+
+local function getPlayerBaseCFrame()
+    local plot = getPlayerPlot()
+    if plot then
+        local zone = plot:FindFirstChild("SquatZone") or plot:FindFirstChild("DefaultSize") or plot:FindFirstChild("Detector")
+        if zone then
+            local cf = zone:IsA("Model") and zone:GetPivot() or zone.CFrame
+            return cf + Vector3.new(0, 3, 0)
+        end
+        return plot:GetPivot() + Vector3.new(0, 3, 0)
+    end
+    return nil
+end
+
+local function teleportToBase()
+    local baseCF = getPlayerBaseCFrame()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if root and baseCF then
+        instantTeleport(baseCF)
+        if ReturnToBaseRemote then
+            pcall(function() ReturnToBaseRemote:FireServer() end)
+        end
+        return true
+    end
+    return false
+end
+
+-- ==================== TRAINING LOGIC ====================
+local function getSquatDetector()
+    local plot = getPlayerPlot()
+    if plot then
+        local squatZone = plot:FindFirstChild("SquatZone")
+        local floor = squatZone and squatZone:FindFirstChild("Floor")
+        local detector = floor and floor:FindFirstChild("Detector")
+        if detector and detector:IsA("BasePart") then
+            return detector
+        end
+    end
+    return nil
+end
+
+local function hitBonusNow()
+    local version = LocalPlayer:GetAttribute("SquatBonusVersion")
+    local verNum = math.floor(tonumber(version) or 0)
+    if SquatBonusRemote then
+        SquatBonusRemote:FireServer(verNum)
+    end
+end
+
+local function setupBonusListener()
+    if BonusConnection then
+        BonusConnection:Disconnect()
+        BonusConnection = nil
+    end
+
+    BonusConnection = LocalPlayer:GetAttributeChangedSignal("SquatBonusAvailable"):Connect(function()
+        if AutoHitBonus and LocalPlayer:GetAttribute("SquatBonusAvailable") == true then
+            task.wait(0.05)
+            hitBonusNow()
+        end
+    end)
+end
+setupBonusListener()
+
+local function runTrainingLoop()
+    while AutoTrain do
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then
+            task.wait(1)
+            continue
+        end
+
+        local isSquatting = LocalPlayer:GetAttribute("IsSquatting") == true
+        if not isSquatting then
+            local detector = getSquatDetector()
+            if detector then
+                instantTeleport(detector.CFrame + Vector3.new(0, 2.5, 0))
+                task.wait(0.2)
+                if SquatTrainingRemote then
+                    SquatTrainingRemote:FireServer(detector)
+                end
+            end
+        end
+
+        if AutoHitBonus and LocalPlayer:GetAttribute("SquatBonusAvailable") == true then
+            hitBonusNow()
+        end
+
+        task.wait(0.5)
+    end
+end
+
+TrainingTab:Toggle({
+    Title = "Auto Train (Squats)",
+    Desc = "Teleports to your Squat Zone and trains automatically",
+    Value = false,
+    Callback = function(state)
+        AutoTrain = state
+        if AutoTrain then
+            if TrainLoopThread then
+                task.cancel(TrainLoopThread)
+            end
+            TrainLoopThread = task.spawn(runTrainingLoop)
+        else
+            if TrainLoopThread then
+                task.cancel(TrainLoopThread)
+                TrainLoopThread = nil
+            end
+            if StopSquattingRemote then
+                pcall(function() StopSquattingRemote:FireServer() end)
+            end
+        end
+    end
+})
+
+TrainingTab:Toggle({
+    Title = "Auto Hit 2x Speed Bonus",
+    Desc = "Instantly clicks the 2x Speed Bonus popup the moment it spawns",
+    Value = true,
+    Callback = function(val)
+        AutoHitBonus = val
+    end
+})
+
+TrainingTab:Button({
+    Title = "Hit 2x Bonus Now",
+    Desc = "Triggers the bonus remote manually",
+    Callback = function()
+        hitBonusNow()
+    end
+})
+
+TrainingTab:Button({
+    Title = "Stop Training",
+    Desc = "Stops current squatting session",
+    Callback = function()
+        AutoTrain = false
+        if TrainLoopThread then
+            task.cancel(TrainLoopThread)
+            TrainLoopThread = nil
+        end
+        if StopSquattingRemote then
+            pcall(function() StopSquattingRemote:FireServer() end)
+        end
+    end
+})
+
+-- ==================== EGG HARVESTING ENGINE ====================
+local function isEggAllowed(eggName)
+    local hasSpecificEgg = false
+    for _, isSel in pairs(SelectedEggs) do
+        if isSel then
+            hasSpecificEgg = true
+            break
+        end
+    end
+
+    if not hasSpecificEgg then
+        return true
+    end
+
+    local lowerName = string.lower(eggName)
+    for sel, isSel in pairs(SelectedEggs) do
+        if isSel and (string.lower(sel) == lowerName or string.find(lowerName, string.lower(sel))) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function isZoneAllowed(zoneName)
+    local hasSpecificZone = false
+    for _, isSel in pairs(SelectedZones) do
+        if isSel then
+            hasSpecificZone = true
+            break
+        end
+    end
+
+    if not hasSpecificZone then
+        return true
+    end
+
+    return SelectedZones[zoneName] == true
+end
+
+local function getTargetEggPrompt()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil, nil end
+
+    local closestPrompt = nil
+    local closestPart = nil
+    local shortestDist = math.huge
+
+    local stagesFolder = Workspace.Map:FindFirstChild("Stages")
+    if stagesFolder then
+        for _, stage in ipairs(stagesFolder:GetChildren()) do
+            if isZoneAllowed(stage.Name) then
+                local spawned = stage:FindFirstChild("SpawnedEggs")
+                if spawned then
+                    for _, egg in ipairs(spawned:GetChildren()) do
+                        if isEggAllowed(egg.Name) then
+                            local prompt = egg:FindFirstChild("CollectPrompt", true)
+                            if prompt and prompt.Enabled then
+                                local part = egg.PrimaryPart or egg:FindFirstChild("EggRoot") or egg:FindFirstChildWhichIsA("BasePart", true)
+                                if part then
+                                    local dist = (root.Position - part.Position).Magnitude
+                                    if dist < shortestDist then
+                                        shortestDist = dist
+                                        closestPrompt = prompt
+                                        closestPart = part
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if TargetExclusives or not next(SelectedZones) then
+        for _, obj in ipairs(Workspace:GetChildren()) do
+            if obj.Name ~= "Terrain" and obj.Name ~= "Map" and obj.Name ~= "Camera" then
+                local prompt = obj:FindFirstChild("CollectPrompt", true)
+                if prompt and prompt.Enabled and isEggAllowed(obj.Name) then
+                    local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
+                    if part then
+                        local dist = (root.Position - part.Position).Magnitude
+                        if dist < shortestDist then
+                            shortestDist = dist
+                            closestPrompt = prompt
+                            closestPart = part
+                        end
+                    end
+                end
+            end
+        end
+
+        for _, mapChild in ipairs(Workspace.Map:GetChildren()) do
+            if mapChild.Name ~= "Stages" and mapChild.Name ~= "Plots" then
+                local prompt = mapChild:FindFirstChild("CollectPrompt", true)
+                if prompt and prompt.Enabled and isEggAllowed(mapChild.Name) then
+                    local part = mapChild:IsA("BasePart") and mapChild or mapChild:FindFirstChildWhichIsA("BasePart", true)
+                    if part then
+                        local dist = (root.Position - part.Position).Magnitude
+                        if dist < shortestDist then
+                            shortestDist = dist
+                            closestPrompt = prompt
+                            closestPart = part
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return closestPrompt, closestPart
+end
+
+local function runEggLoop()
+    while AutoCollectEggs do
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then
+            task.wait(1)
+            continue
+        end
+
+        local prompt, part = getTargetEggPrompt()
+        if prompt and part then
+            instantTeleport(part.CFrame + Vector3.new(0, 2, 0))
+            task.wait(0.15)
+
+            triggerPrompt(prompt)
+            task.wait(0.35)
+
+            teleportToBase()
+            task.wait(0.6)
+        else
+            task.wait(1)
+        end
+    end
+end
+
+-- ==================== DINO BONES & CLEANING LOGIC ====================
+local function getTableInfo()
+    local station = Workspace.Map:FindFirstChild("FossilEvent") and Workspace.Map.FossilEvent:FindFirstChild("Station")
+    if not station then return nil, nil end
+    local prompt = station:FindFirstChild("PlacePrompt", true)
+    local detector = station:FindFirstChild("Detector", true) or station:FindFirstChild("ResearchTable", true)
+    return prompt, detector
+end
+
+local function isHoldingOrPendingFossil()
+    local carried = LocalPlayer:GetAttribute("CarriedFossilCount") or 0
+    local pendingName = LocalPlayer:GetAttribute("PendingFossilName")
+    if carried > 0 or (typeof(pendingName) == "string" and pendingName ~= "") then
+        return true
+    end
+    return false
+end
+
+local FossilRarityTier = {
+    ["Mythical"] = 6000,
+    ["Ancient"]  = 5000,
+    ["Rare"]     = 4000,
+    ["Large"]    = 3000,
+    ["Common"]   = 2000,
+    ["Small"]    = 1000
+}
+
+local function getFossilScore(fossilModel, dist)
+    local sizeAttr = fossilModel:GetAttribute("FossilSize") or ""
+    local fragmentsAttr = tonumber(fossilModel:GetAttribute("Fragments")) or 0
+    local tierValue = FossilRarityTier[sizeAttr] or 500
+
+    -- High tier/fragments gets much higher score; subtract distance factor so closest among same tier wins
+    return (tierValue * 10) + (fragmentsAttr * 100) - (dist * 0.05)
+end
+
+local function getAvailableFossil()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return nil, nil end
+
+    local stagesFolder = Workspace.Map:FindFirstChild("Stages")
+    if not stagesFolder then return nil, nil end
+
+    local candidatePrompt = nil
+    local candidatePart = nil
+    local bestScore = -math.huge
+    local shortestDist = math.huge
+
+    local function checkFossil(fossilModel)
+        -- Skip if someone else is already carrying it
+        local carriedBy = fossilModel:GetAttribute("CarriedByUserId")
+        if carriedBy and carriedBy ~= 0 and carriedBy ~= LocalPlayer.UserId then
+            return
+        end
+
+        local prompt = fossilModel:FindFirstChild("DigPrompt", true) or fossilModel:FindFirstChildWhichIsA("ProximityPrompt", true)
+        if prompt and prompt.Enabled then
+            local part = fossilModel:IsA("BasePart") and fossilModel or fossilModel:FindFirstChildWhichIsA("BasePart", true)
+            if part then
+                local dist = (root.Position - part.Position).Magnitude
+                if PrioritizeBetterBones then
+                    local score = getFossilScore(fossilModel, dist)
+                    if score > bestScore then
+                        bestScore = score
+                        candidatePrompt = prompt
+                        candidatePart = part
+                    end
+                else
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        candidatePrompt = prompt
+                        candidatePart = part
+                    end
+                end
+            end
+        end
+    end
+
+    for _, stage in ipairs(stagesFolder:GetChildren()) do
+        local spawned = stage:FindFirstChild("SpawnedFossils")
+        if spawned then
+            for _, fossilModel in ipairs(spawned:GetChildren()) do
+                checkFossil(fossilModel)
+            end
+        end
+    end
+
+    local adminFossils = Workspace:FindFirstChild("AdminFossils")
+    if adminFossils then
+        for _, f in ipairs(adminFossils:GetChildren()) do
+            checkFossil(f)
+        end
+    end
+
+    return candidatePrompt, candidatePart
+end
+
+local function instantCleanBone()
+    local tablePrompt, tableDetector = getTableInfo()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root or not tableDetector then return end
+
+    instantTeleport(tableDetector.CFrame + Vector3.new(0, 3, 0))
+    task.wait(0.2)
+
+    if tablePrompt and tablePrompt.Enabled then
+        triggerPrompt(tablePrompt)
+        task.wait(0.25)
+    end
+
+    if FossilRemote then
+        pcall(function()
+            FossilRemote:FireServer("Finish")
+        end)
+    end
+
+    local maxWait = 3.5
+    local waited = 0
+    while isHoldingOrPendingFossil() and waited < maxWait do
+        task.wait(0.2)
+        waited = waited + 0.2
+        if FossilRemote then
+            pcall(function() FossilRemote:FireServer("Finish") end)
+        end
+    end
+    task.wait(0.25)
+end
+
+local function runFossilLoop()
+    while AutoFarmFossils do
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then
+            task.wait(1)
+            continue
+        end
+
+        if isHoldingOrPendingFossil() then
+            if AutoCleanBones then
+                instantCleanBone()
+            end
+            task.wait(0.3)
+            continue
+        end
+
+        local prompt, part = getAvailableFossil()
+        if prompt and part then
+            instantTeleport(part.CFrame + Vector3.new(0, 2, 0))
+            task.wait(0.2)
+
+            triggerPrompt(prompt)
+
+            local pickupWait = 0
+            while not isHoldingOrPendingFossil() and pickupWait < 1.5 do
+                task.wait(0.1)
+                pickupWait = pickupWait + 0.1
+            end
+            task.wait(0.15)
+
+            if AutoCleanBones and isHoldingOrPendingFossil() then
+                instantCleanBone()
+            end
+
+            task.wait(0.4)
+        else
+            task.wait(1.5)
+        end
+    end
+end
+
+-- ==================== UI SETUP: EGG TAB ====================
+EggTab:Dropdown({
+    Title = "Select Target Zones",
+    Desc = "Pick multiple zones (Leave empty to search all)",
+    Values = ZoneList,
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selectedTable)
+        SelectedZones = {}
+        for _, name in ipairs(selectedTable) do
+            SelectedZones[name] = true
+        end
+    end
+})
+
+EggTab:Dropdown({
+    Title = "Select Target Eggs",
+    Desc = "Pick multiple eggs (Leave empty to collect any available)",
+    Values = AllEggsSorted,
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selectedTable)
+        SelectedEggs = {}
+        for _, name in ipairs(selectedTable) do
+            SelectedEggs[name] = true
+        end
+    end
+})
+
+EggTab:Toggle({
+    Title = "Auto Collect & Return",
+    Desc = "Farms all selected eggs across selected zones & returns to base",
+    Value = false,
+    Callback = function(state)
+        AutoCollectEggs = state
+        if AutoCollectEggs then
+            if EggLoopThread then
+                task.cancel(EggLoopThread)
+            end
+            EggLoopThread = task.spawn(runEggLoop)
+        else
+            if EggLoopThread then
+                task.cancel(EggLoopThread)
+                EggLoopThread = nil
+            end
+        end
+    end
+})
+
+EggTab:Button({
+    Title = "Teleport To Base Now",
+    Desc = "Instantly return to your base plot",
+    Callback = function()
+        teleportToBase()
+    end
+})
+
+-- ==================== UI SETUP: DINO BONES TAB ====================
+DinoTab:Toggle({
+    Title = "Auto Farm Dino Bones",
+    Desc = "Instantly teleports to bones and cleans each before targeting the next",
+    Value = false,
+    Callback = function(state)
+        AutoFarmFossils = state
+        if AutoFarmFossils then
+            if FossilLoopThread then
+                task.cancel(FossilLoopThread)
+            end
+            FossilLoopThread = task.spawn(runFossilLoop)
+        else
+            if FossilLoopThread then
+                task.cancel(FossilLoopThread)
+                FossilLoopThread = nil
+            end
+        end
+    end
+})
+
+DinoTab:Toggle({
+    Title = "Instant Auto Clean (Convert to Bones)",
+    Desc = "Takes dug fossils to the Research Table & finishes cleaning",
+    Value = true,
+    Callback = function(val)
+        AutoCleanBones = val
+    end
+})
+
+DinoTab:Toggle({
+    Title = "Prioritize Better Bones (Rarity & Fragments)",
+    Desc = "Targets Mythical, Ancient, Rare & high-fragment bones first",
+    Value = true,
+    Callback = function(val)
+        PrioritizeBetterBones = val
+    end
+})
+
+DinoTab:Button({
+    Title = "Teleport To Research Table",
+    Desc = "Instantly travel to the Research Station",
+    Callback = function()
+        local _, tableDetector = getTableInfo()
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root and tableDetector then
+            instantTeleport(tableDetector.CFrame + Vector3.new(0, 3, 0))
+        end
+    end
+})
+
+DinoTab:Button({
+    Title = "Instant Clean Carried Fossil",
+    Desc = "Places carried fossil on table & calls instant server clean",
+    Callback = function()
+        instantCleanBone()
+    end
+})
+
+-- ==================== UI SETUP: ESP / VISUALS TAB ====================
+EspTab:Toggle({
+    Title = "Player ESP",
+    Desc = "Highlights all other players in red through walls",
+    Value = false,
+    Callback = function(state)
+        PlayerEspEnabled = state
+        if not state then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    removeHighlight(p.Character)
+                end
+            end
+        end
+    end
+})
+
+EspTab:Toggle({
+    Title = "Egg ESP",
+    Desc = "Highlights all spawned eggs across the map in gold",
+    Value = false,
+    Callback = function(state)
+        EggEspEnabled = state
+        if not state then
+            local stages = Workspace.Map:FindFirstChild("Stages")
+            if stages then
+                for _, stage in ipairs(stages:GetChildren()) do
+                    local spawned = stage:FindFirstChild("SpawnedEggs")
+                    if spawned then
+                        for _, egg in ipairs(spawned:GetChildren()) do
+                            removeHighlight(egg)
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+EspTab:Toggle({
+    Title = "Dino Bones ESP",
+    Desc = "Highlights all spawned fossils and bones in cyan",
+    Value = false,
+    Callback = function(state)
+        BoneEspEnabled = state
+        if not state then
+            local stages = Workspace.Map:FindFirstChild("Stages")
+            if stages then
+                for _, stage in ipairs(stages:GetChildren()) do
+                    local spawned = stage:FindFirstChild("SpawnedFossils")
+                    if spawned then
+                        for _, fossil in ipairs(spawned:GetChildren()) do
+                            removeHighlight(fossil)
+                        end
+                    end
+                end
+            end
+            local adminFossils = Workspace:FindFirstChild("AdminFossils")
+            if adminFossils then
+                for _, f in ipairs(adminFossils:GetChildren()) do
+                    removeHighlight(f)
+                end
+            end
+        end
+    end
+})
+
+EspTab:Button({
+    Title = "Clear All ESP Highlights",
+    Desc = "Removes any active highlight instances immediately",
+    Callback = function()
+        clearHighlights()
+    end
+})
+
+-- ==================== UI SETUP: EXCLUSIVES & EVENTS TAB ====================
+ExclusiveTab:Toggle({
+    Title = "Target Event & Exclusive Spawns",
+    Desc = "Also scan for off-zone eggs (Evil Eggs, Admin Eggs, Fossil Event, etc.)",
+    Value = true,
+    Callback = function(val)
+        TargetExclusives = val
+    end
+})
+
+ExclusiveTab:Dropdown({
+    Title = "Exclusive & Rare Eggs",
+    Desc = "Quickly add rare/event eggs to your target list",
+    Values = ExclusiveEggsList,
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selectedTable)
+        for _, eggName in ipairs(selectedTable) do
+            SelectedEggs[eggName] = true
+        end
+    end
+})
+
+for _, exName in ipairs(ExclusiveEggsList) do
+    ExclusiveTab:Button({
+        Title = "Collect " .. exName .. " Now",
+        Desc = "Scans and teleports immediately to any active " .. exName,
+        Callback = function()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+
+            local found = nil
+            for _, desc in ipairs(Workspace:GetDescendants()) do
+                if string.find(string.lower(desc.Name), string.lower(exName)) then
+                    local prompt = desc:FindFirstChild("CollectPrompt", true) or desc:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    if prompt and prompt.Enabled then
+                        local part = desc:IsA("BasePart") and desc or desc:FindFirstChildWhichIsA("BasePart", true)
+                        if part then
+                            found = {prompt = prompt, part = part}
+                            break
+                        end
+                    end
+                end
+            end
+
+            if found then
+                instantTeleport(found.part.CFrame + Vector3.new(0, 2, 0))
+                task.wait(0.15)
+                triggerPrompt(found.prompt)
+                task.wait(0.35)
+                teleportToBase()
+            end
+        end
+    })
+end
+
+-- ==================== DUPE / GIFTING TAB ====================
+local function getActivePlayerList()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p.Name)
+        end
+    end
+    if #list == 0 then
+        table.insert(list, "No Other Players")
+    end
+    return list
+end
+
+local function getTargetPlayer()
+    if TargetPlayerName == "" or TargetPlayerName == "No Other Players" then return nil end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and (string.lower(p.Name) == string.lower(TargetPlayerName) or string.lower(p.DisplayName) == string.lower(TargetPlayerName)) then
+            return p
+        end
+    end
+    return nil
+end
+
+local function executeDupeGlitch()
+    local target = getTargetPlayer()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not target or not target.Character or not root then return end
+
+    local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+    if not targetRoot then return end
+
+    instantTeleport(targetRoot.CFrame + targetRoot.CFrame.LookVector * 3)
+    task.wait(0.15)
+
+    local prompt = targetRoot:FindFirstChild("GiftPrompt")
+    if prompt and prompt:IsA("ProximityPrompt") and prompt.Enabled then
+        triggerPrompt(prompt)
+    end
+
+    task.spawn(function()
+        task.wait(0.05)
+        if GiftRemote then
+            pcall(function() GiftRemote:FireServer("Respond", true) end)
+        end
+    end)
+    task.spawn(function()
+        local dropRemote = ReplicatedStorage.Remotes:FindFirstChild("DropEggRequest")
+        if dropRemote then
+            pcall(function() dropRemote:FireServer() end)
+        end
+    end)
+end
+
+local PlayerDropdown = DupeTab:Dropdown({
+    Title = "Select Player Target",
+    Desc = "Target player for the gift desync dupe",
+    Values = getActivePlayerList(),
+    Value = getActivePlayerList()[1] or "",
+    Callback = function(val)
+        TargetPlayerName = val
+    end
+})
+
+DupeTab:Button({
+    Title = "Refresh Player List",
+    Desc = "Scans server players and updates the target dropdown",
+    Callback = function()
+        local currentList = getActivePlayerList()
+        if PlayerDropdown and PlayerDropdown.Refresh then
+            PlayerDropdown:Refresh(currentList)
+            PlayerDropdown:Select(currentList[1] or "")
+        end
+    end
+})
+
+DupeTab:Button({
+    Title = "Run Gift Desync Glitch (Instant)",
+    Desc = "Teleports to target and fires simultaneous gift request & packet drop desync",
+    Callback = function()
+        executeDupeGlitch()
+    end
+})
+
+DupeTab:Toggle({
+    Title = "Auto Loop Gift Desync",
+    Desc = "Repeatedly executes the gift desync sequence with the selected target",
+    Value = false,
+    Callback = function(state)
+        AutoDupeLoop = state
+        if AutoDupeLoop then
+            if DupeThread then task.cancel(DupeThread) end
+            DupeThread = task.spawn(function()
+                while AutoDupeLoop do
+                    executeDupeGlitch()
+                    task.wait(2.2)
+                end
+            end)
+        else
+            if DupeThread then
+                task.cancel(DupeThread)
+                DupeThread = nil
+            end
+        end
+    end
+})
+
+DupeTab:Button({
+    Title = "Auto Accept Incoming Gifts",
+    Desc = "Forces Remotes.Gift Respond to True if someone offers a gift",
+    Callback = function()
+        if GiftRemote then
+            pcall(function() GiftRemote:FireServer("Respond", true) end)
+        end
+    end
+})
+
+-- ==================== AUTO CLAIMS & FREEBIES TAB ====================
+local KnownCodes = {"WELCOME", "FREESPINS", "JUMPSTART", "EGGHUNT"}
+
+local function runWheelLoop()
+    while AutoSpinWheel do
+        local spins = LocalPlayer:GetAttribute("WheelspinSpins") or 0
+        if spins > 0 and WheelspinRemote then
+            pcall(function()
+                WheelspinRemote:FireServer("Spin")
+            end)
+            task.wait(4.5)
+        else
+            task.wait(3)
+        end
+    end
+end
+
+local function runOfflineClaimLoop()
+    while AutoClaimOffline do
+        local pending = LocalPlayer:GetAttribute("OfflineCashPending") or 0
+        if pending > 0 and OfflineRewardsRemote then
+            pcall(function()
+                OfflineRewardsRemote:FireServer("Claim")
+            end)
+        end
+        task.wait(5)
+    end
+end
+
+local function runIndexClaimLoop()
+    while AutoClaimIndex do
+        if ClaimIndexRemote then
+            pcall(function()
+                ClaimIndexRemote:FireServer("ClaimAll")
+            end)
+        end
+        task.wait(10)
+    end
+end
+
+ClaimsTab:Toggle({
+    Title = "Auto Spin Wheel",
+    Desc = "Spins the lucky wheel whenever a spin or free timer is available",
+    Value = false,
+    Callback = function(state)
+        AutoSpinWheel = state
+        if AutoSpinWheel then
+            if WheelspinThread then task.cancel(WheelspinThread) end
+            WheelspinThread = task.spawn(runWheelLoop)
+        else
+            if WheelspinThread then
+                task.cancel(WheelspinThread)
+                WheelspinThread = nil
+            end
+        end
+    end
+})
+
+ClaimsTab:Toggle({
+    Title = "Auto Claim Offline Rewards",
+    Desc = "Collects accumulated offline cash as soon as it is available",
+    Value = false,
+    Callback = function(state)
+        AutoClaimOffline = state
+        if AutoClaimOffline then
+            if OfflineThread then task.cancel(OfflineThread) end
+            OfflineThread = task.spawn(runOfflineClaimLoop)
+        else
+            if OfflineThread then
+                task.cancel(OfflineThread)
+                OfflineThread = nil
+            end
+        end
+    end
+})
+
+ClaimsTab:Toggle({
+    Title = "Auto Claim Animal Index Rewards",
+    Desc = "Automatically collects milestone rewards for newly discovered animals",
+    Value = false,
+    Callback = function(state)
+        AutoClaimIndex = state
+        if AutoClaimIndex then
+            if IndexThread then task.cancel(IndexThread) end
+            IndexThread = task.spawn(runIndexClaimLoop)
+        else
+            if IndexThread then
+                task.cancel(IndexThread)
+                IndexThread = nil
+            end
+        end
+    end
+})
+
+ClaimsTab:Button({
+    Title = "Claim Group Reward Chest",
+    Desc = "Instantly collects the daily group member reward",
+    Callback = function()
+        local groupRewardRemote = ReplicatedStorage.Remotes:FindFirstChild("GroupReward")
+        if groupRewardRemote then
+            pcall(function() groupRewardRemote:FireServer() end)
+        end
+        local rewardsFolder = Workspace.Map:FindFirstChild("Rewards")
+        if rewardsFolder then
+            local prompt = rewardsFolder:FindFirstChild("GroupRewardPrompt", true)
+            if prompt and prompt.Enabled then
+                triggerPrompt(prompt)
+            end
+        end
+    end
+})
+
+ClaimsTab:Button({
+    Title = "Redeem All Active Codes",
+    Desc = "Automatically enters and claims known gift codes",
+    Callback = function()
+        if CodesRemote then
+            for _, code in ipairs(KnownCodes) do
+                pcall(function()
+                    CodesRemote:FireServer(code)
+                end)
+                task.wait(0.5)
+            end
+        end
+    end
+})
+
+-- ==================== UPGRADES & BASE TAB ====================
+local function runUpgradeLoop()
+    while AutoUpgrades do
+        -- 1. Check & Buy Speed Coils
+        if CoilsRemote then
+            local coils = {"Red Coil", "Candy Coil", "Yellow Coil", "Chocolate Coil"}
+            for _, coilName in ipairs(coils) do
+                pcall(function() CoilsRemote:FireServer("Buy", coilName) end)
+                task.wait(0.1)
+            end
+        end
+
+        -- 2. Step on Jump upgrade pads if nearby or touched
+        local mapFolder = Workspace:FindFirstChild("Map")
+        local jumpPads = mapFolder and mapFolder:FindFirstChild("JumpUpgrades")
+        if jumpPads then
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                for _, pad in ipairs(jumpPads:GetChildren()) do
+                    if pad:IsA("BasePart") and typeof(firetouchinterest) == "function" then
+                        pcall(function()
+                            firetouchinterest(root, pad, 0)
+                            task.wait(0.05)
+                            firetouchinterest(root, pad, 1)
+                        end)
+                    end
+                end
+            end
+        end
+
+        task.wait(5)
+    end
+end
+
+local function runFossilEggBuyerLoop()
+    while AutoBuyFossilEggs do
+        local stand = Workspace.Map:FindFirstChild("FossilEvent") and Workspace.Map.FossilEvent:FindFirstChild("Station")
+        local eggStand = stand and stand:FindFirstChild("EggStand", true)
+        local buyPrompt = eggStand and eggStand:FindFirstChild("BuyPrompt", true)
+        if buyPrompt and buyPrompt.Enabled then
+            triggerPrompt(buyPrompt)
+        end
+        task.wait(2)
+    end
+end
+
+local function runEggPlacerLoop()
+    while AutoPlaceCarriedEggs do
+        local carried = LocalPlayer:GetAttribute("CarriedEggCount") or 0
+        if carried > 0 and PlaceEggRemote then
+            pcall(function()
+                PlaceEggRemote:FireServer()
+            end)
+        end
+        task.wait(1.5)
+    end
+end
+
+ProgressionTab:Toggle({
+    Title = "Auto Purchase Speed & Jump Upgrades",
+    Desc = "Continuously buys affordable coils and touches upgrade pads",
+    Value = false,
+    Callback = function(state)
+        AutoUpgrades = state
+        if AutoUpgrades then
+            if UpgradesThread then task.cancel(UpgradesThread) end
+            UpgradesThread = task.spawn(runUpgradeLoop)
+        else
+            if UpgradesThread then
+                task.cancel(UpgradesThread)
+                UpgradesThread = nil
+            end
+        end
+    end
+})
+
+ProgressionTab:Toggle({
+    Title = "Auto Buy Fossiled Egg (500 Fragments)",
+    Desc = "Buys the exclusive Fossiled Egg whenever you have 500 fragments",
+    Value = false,
+    Callback = function(state)
+        AutoBuyFossilEggs = state
+        if AutoBuyFossilEggs then
+            if FossilEggBuyThread then task.cancel(FossilEggBuyThread) end
+            FossilEggBuyThread = task.spawn(runFossilEggBuyerLoop)
+        else
+            if FossilEggBuyThread then
+                task.cancel(FossilEggBuyThread)
+                FossilEggBuyThread = nil
+            end
+        end
+    end
+})
+
+ProgressionTab:Toggle({
+    Title = "Auto Place Carried Eggs On Plot",
+    Desc = "Instantly deploys collected eggs into your plot slots",
+    Value = false,
+    Callback = function(state)
+        AutoPlaceCarriedEggs = state
+        if AutoPlaceCarriedEggs then
+            if EggPlaceThread then task.cancel(EggPlaceThread) end
+            EggPlaceThread = task.spawn(runEggPlacerLoop)
+        else
+            if EggPlaceThread then
+                task.cancel(EggPlaceThread)
+                EggPlaceThread = nil
+            end
+        end
+    end
+})
+
+ProgressionTab:Button({
+    Title = "Claim Mutation Craft",
+    Desc = "Claims ready mutated animal from the laboratory",
+    Callback = function()
+        local mutFolder = Workspace.Map:FindFirstChild("Mutations")
+        if mutFolder then
+            local prompt = mutFolder:FindFirstChild("MutationRemovePrompt", true) or mutFolder:FindFirstChild("MutationPrompt", true)
+            if prompt and prompt.Enabled then
+                triggerPrompt(prompt)
+            end
+        end
+    end
+})
+
+-- ==================== COMBAT & SLAP AURA TAB ====================
+local function runSlapAuraLoop()
+    while SlapAuraEnabled do
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root and SlapRemote then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
+                    local targetHum = player.Character:FindFirstChildOfClass("Humanoid")
+                    if targetRoot and targetHum and targetHum.Health > 0 then
+                        local dist = (root.Position - targetRoot.Position).Magnitude
+                        if dist <= SlapAuraRange then
+                            pcall(function()
+                                SlapRemote:FireServer(player)
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(0.35)
+    end
+end
+
+CombatTab:Toggle({
+    Title = "Slap Aura",
+    Desc = "Automatically slaps any player who enters your aura radius",
+    Value = false,
+    Callback = function(state)
+        SlapAuraEnabled = state
+        if SlapAuraEnabled then
+            if SlapAuraThread then task.cancel(SlapAuraThread) end
+            SlapAuraThread = task.spawn(runSlapAuraLoop)
+        else
+            if SlapAuraThread then
+                task.cancel(SlapAuraThread)
+                SlapAuraThread = nil
+            end
+        end
+    end
+})
+
+CombatTab:Slider({
+    Title = "Slap Aura Range",
+    Desc = "Maximum distance to slap targets",
+    Value = {
+        Min = 5,
+        Max = 20,
+        Default = 12
+    },
+    Step = 1,
+    Callback = function(val)
+        SlapAuraRange = val
+    end
+})
+
+CombatTab:Toggle({
+    Title = "Anti-Ragdoll / Anti-Knockback",
+    Desc = "Instantly clears ragdoll and platform stand if slapped by others",
+    Value = false,
+    Callback = function(state)
+        AntiSlapRagdoll = state
+        if AntiSlapRagdoll then
+            if AntiSlapConnection then AntiSlapConnection:Disconnect() end
+            AntiSlapConnection = RunService.Heartbeat:Connect(function()
+                local char = LocalPlayer.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum and not Flying then
+                    if hum.PlatformStand then
+                        hum.PlatformStand = false
+                    end
+                    local stateVal = hum:GetState()
+                    if stateVal == Enum.HumanoidStateType.Ragdoll or stateVal == Enum.HumanoidStateType.FallingDown then
+                        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+                    end
+                end
+            end)
+        elseif AntiSlapConnection then
+            AntiSlapConnection:Disconnect()
+            AntiSlapConnection = nil
+        end
+    end
+})
+
+-- ==================== EXTRAS TAB ====================
+local function startAntiAfk()
+    if AntiAfkConnection then
+        AntiAfkConnection:Disconnect()
+        AntiAfkConnection = nil
+    end
+
+    local VirtualUser = game:GetService("VirtualUser")
+    AntiAfkConnection = LocalPlayer.Idled:Connect(function()
+        if AntiAfkEnabled then
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.zero)
+        end
+    end)
+end
+startAntiAfk()
+
+ExtrasTab:Toggle({
+    Title = "Anti-AFK",
+    Desc = "Prevents Roblox from kicking you after 20 minutes of inactivity",
+    Value = true,
+    Callback = function(state)
+        AntiAfkEnabled = state
+        if AntiAfkEnabled then
+            startAntiAfk()
+        elseif AntiAfkConnection then
+            AntiAfkConnection:Disconnect()
+            AntiAfkConnection = nil
+        end
+    end
+})
+
+ExtrasTab:Button({
+    Title = "Server Hop (Low Population)",
+    Desc = "Teleports you to the server with the fewest players",
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        local HttpService = game:GetService("HttpService")
+        local placeId = game.PlaceId
+
+        task.spawn(function()
+            local success, servers = pcall(function()
+                return HttpService:JSONDecode(
+                    game:HttpGet("https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100")
+                )
+            end)
+
+            if not success or not servers or not servers.data then
+                warn("[ServerHop] Failed to fetch server list")
+                return
+            end
+
+            local bestServer = nil
+            local lowestPlayers = math.huge
+
+            for _, server in ipairs(servers.data) do
+                local playing = server.playing or 0
+                local maxPlayers = server.maxPlayers or 0
+                if server.id ~= game.JobId and playing < lowestPlayers and maxPlayers > 0 then
+                    lowestPlayers = playing
+                    bestServer = server
+                end
+            end
+
+            if bestServer then
+                TeleportService:TeleportToPlaceInstance(placeId, bestServer.id, LocalPlayer)
+            else
+                warn("[ServerHop] No suitable server found")
+            end
+        end)
+    end
+})
+
+local KeyList = {
+    "RightControl",
+    "LeftControl",
+    "RightShift",
+    "LeftAlt",
+    "RightAlt",
+    "Insert",
+    "Home",
+    "End",
+    "F4",
+    "F8",
+    "K",
+    "P",
+    "V",
+    "Z"
+}
+
+ExtrasTab:Dropdown({
+    Title = "Change Menu Toggle Key",
+    Desc = "Choose which key toggles Goonys menu",
+    Values = KeyList,
+    Value = "RightControl",
+    Callback = function(keyName)
+        local newKey = Enum.KeyCode[keyName]
+        if newKey then
+            MenuToggleKey = newKey
+            if Window.SetToggleKey then
+                pcall(function() Window:SetToggleKey(newKey) end)
+            end
+        end
+    end
+})
+
+local isMenuOpen = true
+local lastToggleTick = 0
+
+local function toggleMenuVisibility()
+    local now = os.clock()
+    if now - lastToggleTick < 0.35 then return end
+    lastToggleTick = now
+    if isMenuOpen then
+        if Window.Close then pcall(function() Window:Close() end)
+        elseif Window.Toggle then pcall(function() Window:Toggle() end) end
+        isMenuOpen = false
+    else
+        if Window.Open then pcall(function() Window:Open() end)
+        elseif Window.Toggle then pcall(function() Window:Toggle() end) end
+        isMenuOpen = true
+    end
+end
+
+KeybindConnection = UserInputService.InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == MenuToggleKey then
+        toggleMenuVisibility()
+    end
+end)
+
+ExtrasTab:Button({
+    Title = "Re-open / Toggle UI",
+    Desc = "Manually toggle menu visibility",
+    Callback = function()
+        toggleMenuVisibility()
+    end
+})
+
+-- ==================== SCREEN GUI TOGGLE BUTTON ====================
+local CoreGui = game:GetService("CoreGui")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GoonysMenuToggleGui"
+screenGui.ResetOnSpawn = false
+
+local parentTarget = (typeof(gethui) == "function" and gethui()) or CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Parent = parentTarget
+getgenv()._FlyToggleGui = screenGui
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.fromOffset(140, 42)
+toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
+toggleButton.BackgroundColor3 = Color3.fromRGB(24, 24, 28)
+toggleButton.Text = "⚡ Goonys menu"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+toggleButton.AutoButtonColor = true
+toggleButton.Active = true
+toggleButton.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = toggleButton
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1.5
+stroke.Color = Color3.fromRGB(0, 170, 255)
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Parent = toggleButton
+
+local dragging = false
+local dragInput, dragStart, startPos
+local wasDragged = false
+
+toggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        wasDragged = false
+        dragStart = input.Position
+        startPos = toggleButton.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+toggleButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        if delta.Magnitude > 4 then
+            wasDragged = true
+        end
+        toggleButton.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    if wasDragged then
+        wasDragged = false
+        return
+    end
+    toggleMenuVisibility()
+end)
+
+-- Clean-up handler
+getgenv()._FlyCleanUp = function()
+    stopFlying()
+    Flying = false
+    AutoCollectEggs = false
+    AutoFarmFossils = false
+    AutoTrain = false
+    AutoDupeLoop = false
+    clearHighlights()
+    if espStep then
+        espStep:Disconnect()
+        espStep = nil
+    end
+    if KeybindConnection then
+        KeybindConnection:Disconnect()
+        KeybindConnection = nil
+    end
+    if AntiAfkConnection then
+        AntiAfkConnection:Disconnect()
+        AntiAfkConnection = nil
+    end
+    if BonusConnection then
+        BonusConnection:Disconnect()
+        BonusConnection = nil
+    end
+    if movementStep then
+        movementStep:Disconnect()
+        movementStep = nil
+    end
+    if EggLoopThread then
+        task.cancel(EggLoopThread)
+        EggLoopThread = nil
+    end
+    if FossilLoopThread then
+        task.cancel(FossilLoopThread)
+        FossilLoopThread = nil
+    end
+    if TrainLoopThread then
+        task.cancel(TrainLoopThread)
+        TrainLoopThread = nil
+    end
+    if DupeThread then
+        task.cancel(DupeThread)
+        DupeThread = nil
+    end
+    if WheelspinThread then
+        task.cancel(WheelspinThread)
+        WheelspinThread = nil
+    end
+    if OfflineThread then
+        task.cancel(OfflineThread)
+        OfflineThread = nil
+    end
+    if IndexThread then
+        task.cancel(IndexThread)
+        IndexThread = nil
+    end
+    if UpgradesThread then
+        task.cancel(UpgradesThread)
+        UpgradesThread = nil
+    end
+    if FossilEggBuyThread then
+        task.cancel(FossilEggBuyThread)
+        FossilEggBuyThread = nil
+    end
+    if EggPlaceThread then
+        task.cancel(EggPlaceThread)
+        EggPlaceThread = nil
+    end
+    if SlapAuraThread then
+        task.cancel(SlapAuraThread)
+        SlapAuraThread = nil
+    end
+    if AntiSlapConnection then
+        AntiSlapConnection:Disconnect()
+        AntiSlapConnection = nil
+    end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = BaseWalkSpeed
+        hum.JumpPower = BaseJumpPower
+    end
+    if Window and Window.Destroy then
+        pcall(function() Window:Destroy() end)
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    applySpeedAndJump()
+    if Flying then
+        startFlying()
+    end
+end)
